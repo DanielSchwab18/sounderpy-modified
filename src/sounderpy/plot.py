@@ -49,7 +49,9 @@ def suppress_stdout_stderr():
 with suppress_stdout_stderr():
     import pyart
 
-
+##### NEW IMPORTS
+import cppimport
+bindings = cppimport.imp("bindings")
 
 """
     SOUNDERPY SPYPLOT FUNCTIONS  
@@ -161,7 +163,40 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     general, thermo, kinem, intrp = sounding_params(sounding_data, storm_motion, include_all_parcels=not show_theta).calc()
     #################################################################
     
+    #################################################################
+    ### OVERWRITE SOUNDERPY VALUES WITH MY VALUES
+    #################################################################
+
+    s = bindings.Sounding("example", False, False, 100) #Def want to rewrite C++ code to take in clean_data in the future
+    general['rh_0_500'] = (s.get_rh(0, 500) + 2)
+    general['rh_0_1000'] = s.get_rh(0, 1000)
+    general['rh_1_3000'] = s.get_rh(1000, 3000)
+    general['rh_3_6000'] = s.get_rh(3000, 6000)
+    general['rh_6_9000'] = s.get_rh(6000, 9000)
+
+    general['w_0_500'] = s.get_w(0, 500) * 1000.0
+    general['w_0_1000'] = s.get_w(0, 1000) * 1000.0
+    general['w_1_3000'] = s.get_w(1000, 3000) * 1000.0
+    general['w_3_6000'] = s.get_w(3000, 6000) * 1000.0
+    general['w_6_9000'] = s.get_w(6000, 9000) * 1000.0 
+
+    general['wb_frz_pt_z'] = np.float64('nan') * units.m
+    general['wb_frz_pt_p'] = np.float64('nan') * units.m
+    general['frz_pt_z'] = np.float64('nan') * units.m
+    general['frz_pt_p'] = np.float64('nan') * units.m
+    general['pwat'] = np.float64('nan')
+
+    general['sfc_pressure'] = s.get_sfc_pressure() * units.hPa
+    general['rel_humidity'] = s.get_relative_humidity()
+    general['spec_humidity'] = s.get_specific_humidity(True) * units.g/units.kg
+    general['mix_ratio'] = s.get_mixing_ratio(True) * units.g/units.kg
+    general['virt_temp'] = s.get_virtual_temperature(True) * units.degC
+
+    # thermo['sbT_trace'] = s.get_sb_parcel_temp(True)
+    # thermo['sbP_trace'] = s.get_pressure(True)
+    # thermo['sbZ_trace'] = s.get_height()
     
+
     
     #################################################################
     ### DECLARE PLOT TITLES FROM CLEAN_DATA ###
