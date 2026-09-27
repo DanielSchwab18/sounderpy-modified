@@ -28,7 +28,7 @@ int main()
     
     std::string file = "C:/Users/danie/Desktop/Purdue/Research/Chavas Summer 2025/Sounding Variable Calculator/Sounding Variable Calculator/example";
     
-    Sounding s = Sounding(file, false, false, 100);
+    Sounding s = Sounding(file, true, true, 100);
     std::cout << s.get_srh(0, 500) << std::endl;
     std::cout << s.compute_stp() << std::endl;
 

@@ -35,10 +35,24 @@ public:
         return sb_entrainment_buoyancy;
     }
 
-    std::vector<double> get_mu_parcel_temp() {
+    std::vector<double> get_mu_parcel_temp(bool needs_celcius = false) {
+        if (needs_celcius) {
+            std::vector<double> cur;
+            for (int i = 0; i < mu_parcel_temp.size(); i++) {
+                cur.push_back(mu_parcel_temp[i] - 273.15);
+            }
+            return cur;
+        }
         return mu_parcel_temp;
     }
-    std::vector<double> get_ml_parcel_temp() {
+    std::vector<double> get_ml_parcel_temp(bool needs_celcius = false) {
+        if (needs_celcius) {
+            std::vector<double> cur;
+            for (int i = 0; i < ml_parcel_temp.size(); i++) {
+                cur.push_back(ml_parcel_temp[i] - 273.15);
+            }
+            return cur;
+        }
         return ml_parcel_temp;
     }
     std::vector<double> get_sb_parcel_temp(bool needs_celcius = false) {
@@ -1774,9 +1788,9 @@ void Sounding::calc_sbparcel_path() {
             //std::cout << "i: " << i << " T_lif[i]: " << T_lif[i] << std::endl;
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
-            
-            
+
             if (Q_v_lif[i] >= q_sat) {
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 double dz_dry = satrat * (height[i] - height[i - 1]);
@@ -1802,7 +1816,6 @@ void Sounding::calc_sbparcel_path() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1]));
@@ -1821,7 +1834,7 @@ void Sounding::calc_sbparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        sb_parcel_temp.push_back(T_lif[i]);
+        sb_parcel_temp.push_back(T_rho_lif[i]);
     }
     for (int i = 0; i < T_rho_lif.size(); i++) {
         sb_parcel_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
@@ -2138,6 +2151,7 @@ void Sounding::calc_sb_entrainment_buoyancy() {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], sb_fractional_entrainment));
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * sb_fractional_entrainment * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             //std::cout << Q_v_lif[i] << std::endl;
@@ -2149,7 +2163,6 @@ void Sounding::calc_sb_entrainment_buoyancy() {
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 
                 if(satrat < 0.05) {
-                    q_sat_prev = q_sat;
                     continue;
                 }
                 
@@ -2177,7 +2190,6 @@ void Sounding::calc_sb_entrainment_buoyancy() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1], sb_fractional_entrainment));
@@ -2435,6 +2447,7 @@ void Sounding::calc_mlparcel_path() {
             //std::cout << "i: " << i << " T_lif[i]: " << T_lif[i] << std::endl;
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             
@@ -2463,7 +2476,6 @@ void Sounding::calc_mlparcel_path() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1]));
@@ -2482,7 +2494,7 @@ void Sounding::calc_mlparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        ml_parcel_temp.push_back(T_lif[i]);
+        ml_parcel_temp.push_back(T_rho_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -2623,6 +2635,7 @@ void Sounding::calc_ml_entrainment_buoyancy() {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], ml_fractional_entrainment));
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * ml_fractional_entrainment * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             if (Q_v_lif[i] >= q_sat) {
@@ -2630,7 +2643,6 @@ void Sounding::calc_ml_entrainment_buoyancy() {
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 
                 if(satrat < 0.05) { //Check if this is original
-                    q_sat_prev = q_sat;
                     ml_e_lcl = height[i-1];
                     continue;
                 }
@@ -2657,7 +2669,6 @@ void Sounding::calc_ml_entrainment_buoyancy() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1], ml_fractional_entrainment));
@@ -2708,6 +2719,7 @@ void Sounding::calc_muparcel_path() {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0));
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             
@@ -2736,7 +2748,6 @@ void Sounding::calc_muparcel_path() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1]));
@@ -2755,7 +2766,7 @@ void Sounding::calc_muparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        mu_parcel_temp.push_back(T_lif[i]);
+        mu_parcel_temp.push_back(T_rho_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -2896,6 +2907,7 @@ void Sounding::calc_mu_entrainment_buoyancy() {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], mu_fractional_entrainment));
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * mu_fractional_entrainment * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             if (Q_v_lif[i] >= q_sat) {
@@ -2903,7 +2915,6 @@ void Sounding::calc_mu_entrainment_buoyancy() {
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 
                 if(satrat < 0.05) {
-                    q_sat_prev = q_sat;
                     continue;
                 }
                 
@@ -2929,7 +2940,6 @@ void Sounding::calc_mu_entrainment_buoyancy() {
                     Q_v_lif[i] = Q_t_lif[i];
                 }
             }
-            q_sat_prev = q_sat;
         }
         else {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1], mu_fractional_entrainment));

@@ -167,7 +167,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     ### OVERWRITE SOUNDERPY VALUES WITH MY VALUES
     #################################################################
 
-    s = bindings.Sounding("example", False, False, 100) #Def want to rewrite C++ code to take in clean_data in the future
+    s = bindings.Sounding("example", True, True, 100) #Def want to rewrite C++ code to take in clean_data in the future
     general['rh_0_500'] = (s.get_rh(0, 500) + 2)
     general['rh_0_1000'] = s.get_rh(0, 1000)
     general['rh_1_3000'] = s.get_rh(1000, 3000)
@@ -192,10 +192,16 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     general['mix_ratio'] = s.get_mixing_ratio(True) * units.g/units.kg
     general['virt_temp'] = s.get_virtual_temperature(True) * units.degC
 
-    # thermo['sbT_trace'] = s.get_sb_parcel_temp(True)
-    # thermo['sbP_trace'] = s.get_pressure(True)
-    # thermo['sbZ_trace'] = s.get_height()
+    thermo['sbT_trace'] = np.ma.asarray(s.get_sb_parcel_temp(True))
+    thermo['sbP_trace'] = np.ma.asarray(s.get_pressure(True))
+    thermo['sbZ_trace'] = np.ma.asarray(s.get_height())
     
+    thermo['muT_trace'] = np.ma.asarray(s.get_mu_parcel_temp(True))
+    thermo['muP_trace'] = np.ma.asarray(s.get_pressure(True))
+    thermo['muZ_trace'] = np.ma.asarray(s.get_height())
+    
+    thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
+    thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
 
     
     #################################################################

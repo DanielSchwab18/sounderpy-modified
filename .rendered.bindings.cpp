@@ -26,8 +26,10 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_sb_entrainment_parcel_buoyancy", &Sounding::get_sb_entrainment_parcel_buoyancy)
 
         //parcel temp traces
-        .def("get_mu_parcel_temp", &Sounding::get_mu_parcel_temp)
-        .def("get_ml_parcel_temp", &Sounding::get_ml_parcel_temp)
+        .def("get_mu_parcel_temp", &Sounding::get_mu_parcel_temp,
+            py::arg("needs_celcius") = false)
+        .def("get_ml_parcel_temp", &Sounding::get_ml_parcel_temp,
+            py::arg("needs_celcius") = false)
         .def("get_sb_parcel_temp", &Sounding::get_sb_parcel_temp,
             py::arg("needs_celcius") = false)
         .def("get_mu_entrainment_parcel_temp", &Sounding::get_mu_entrainment_parcel_temp)
