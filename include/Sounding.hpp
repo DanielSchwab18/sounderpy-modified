@@ -35,8 +35,8 @@ public:
         return sb_entrainment_buoyancy;
     }
 
-    std::vector<double> get_mu_parcel_temp(bool needs_celcius = false) {
-        if (needs_celcius) {
+    std::vector<double> get_mu_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
             std::vector<double> cur;
             for (int i = 0; i < mu_parcel_temp.size(); i++) {
                 cur.push_back(mu_parcel_temp[i] - 273.15);
@@ -45,8 +45,8 @@ public:
         }
         return mu_parcel_temp;
     }
-    std::vector<double> get_ml_parcel_temp(bool needs_celcius = false) {
-        if (needs_celcius) {
+    std::vector<double> get_ml_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
             std::vector<double> cur;
             for (int i = 0; i < ml_parcel_temp.size(); i++) {
                 cur.push_back(ml_parcel_temp[i] - 273.15);
@@ -55,8 +55,8 @@ public:
         }
         return ml_parcel_temp;
     }
-    std::vector<double> get_sb_parcel_temp(bool needs_celcius = false) {
-        if (needs_celcius) {
+    std::vector<double> get_sb_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
             std::vector<double> cur;
             for (int i = 0; i < sb_parcel_temp.size(); i++) {
                 cur.push_back(sb_parcel_temp[i] - 273.15);
@@ -66,13 +66,34 @@ public:
         return sb_parcel_temp;
     }
 
-    std::vector<double> get_mu_entrainment_parcel_temp() {
+    std::vector<double> get_mu_entrainment_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
+            std::vector<double> cur;
+            for (int i = 0; i < mu_entrainment_temp.size(); i++) {
+                cur.push_back(mu_entrainment_temp[i] - 273.15);
+            }
+            return cur;
+        }
         return mu_entrainment_temp;
     }
-    std::vector<double> get_ml_entrainment_parcel_temp() {
+    std::vector<double> get_ml_entrainment_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
+            std::vector<double> cur;
+            for (int i = 0; i < ml_entrainment_temp.size(); i++) {
+                cur.push_back(ml_entrainment_temp[i] - 273.15);
+            }
+            return cur;
+        }
         return ml_entrainment_temp;
     }
-    std::vector<double> get_sb_entrainment_parcel_temp() {
+    std::vector<double> get_sb_entrainment_parcel_temp(bool needs_celsius = false) {
+        if (needs_celsius) {
+            std::vector<double> cur;
+            for (int i = 0; i < sb_entrainment_temp.size(); i++) {
+                cur.push_back(sb_entrainment_temp[i] - 273.15);
+            }
+            return cur;
+        }
         return sb_entrainment_temp;
     }
 
@@ -380,17 +401,49 @@ public:
     [[nodiscard]] double get_sb_lfc() const {
         return sb_lfc;
     }
+
+    [[nodiscard]] double get_ml_lfc() const {
+        return ml_lfc;
+    }
+
+    [[nodiscard]] double get_mu_lfc() const {
+        return mu_lfc;
+    }
     
     [[nodiscard]] double get_sb_el() const {
         return sb_el;
+    }
+
+    [[nodiscard]] double get_ml_el() const {
+        return ml_el;
+    }
+
+    [[nodiscard]] double get_mu_el() const {
+        return mu_el;
     }
     
     [[nodiscard]] double get_sb_e_lfc() const {
         return sb_e_lfc;
     }
+
+    [[nodiscard]] double get_ml_e_lfc() const {
+        return ml_e_lfc;
+    }
+
+    [[nodiscard]] double get_mu_e_lfc() const {
+        return mu_e_lfc;
+    }
     
     [[nodiscard]] double get_sb_e_el() const {
         return sb_e_el;
+    }
+
+    [[nodiscard]] double get_ml_e_el() const {
+        return ml_e_el;
+    }
+
+    [[nodiscard]] double get_mu_e_el() const {
+        return mu_e_el;
     }
     
     std::vector<double> get_interpolated_temperature() {
@@ -432,6 +485,14 @@ public:
     double get_sb3ecape() {
         return sb_3ecape;
     }
+
+    double get_sb6cape() {
+        return sb_6cape;
+    }
+
+    double get_sb6ecape() {
+        return sb_6ecape;
+    }
     
     double get_ml3cape() {
         return ml_3cape;
@@ -440,6 +501,14 @@ public:
     double get_ml3ecape() {
         return ml_3ecape;
     }
+
+    double get_ml6cape() {
+        return ml_6cape;
+    }
+
+    double get_ml6ecape() {
+        return ml_6ecape;
+    }
     
     double get_mu3cape() {
         return mu_3cape;
@@ -447,6 +516,13 @@ public:
     
     double get_mu3ecape() {
         return mu_3ecape;
+    }
+    double get_mu6cape() {
+        return mu_6cape;
+    }
+
+    double get_mu6ecape() {
+        return mu_6ecape;
     }
     
     double get_sb_e_a_tilde() {
@@ -665,13 +741,173 @@ public:
     double get_size() {
         return size;
     }
+
+    double get_sb_lfc_p() {
+        int i = (int) sb_lfc / 100;
+        double deltaZ = sb_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_sb_e_lfc_p() {
+        int i = (int) sb_e_lfc / 100;
+        double deltaZ = sb_e_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
     
     double get_ml_lfc_p() {
-        return ml_lfc_p;
+        int i = (int) ml_lfc / 100;
+        double deltaZ = ml_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
     }
     
     double get_ml_e_lfc_p() {
-        return ml_e_lfc_p;
+        int i = (int) ml_e_lfc / 100;
+        double deltaZ = ml_e_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_lfc_p() {
+        int i = (int) mu_lfc / 100;
+        double deltaZ = mu_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_e_lfc_p() {
+        int i = (int) mu_e_lfc / 100;
+        double deltaZ = mu_e_lfc - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lfc_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lfc_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_sb_el_p() {
+        int i = (int) sb_el / 100;
+        double deltaZ = sb_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_sb_el_t() {
+        int i = (int) sb_el / 100;
+        double deltaZ = sb_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
+    }
+
+    double get_sb_e_el_p() {
+        int i = (int) sb_e_el / 100;
+        double deltaZ = sb_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_sb_e_el_t() {
+        int i = (int) sb_e_el / 100;
+        double deltaZ = sb_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
+    }
+
+    double get_ml_el_p() {
+        int i = (int) ml_el / 100;
+        double deltaZ = ml_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_ml_el_t() {
+        int i = (int) ml_el / 100;
+        double deltaZ = ml_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
+    }
+
+    double get_ml_e_el_p() {
+        int i = (int) ml_e_el / 100;
+        double deltaZ = ml_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_ml_e_el_t() {
+        int i = (int) ml_e_el / 100;
+        double deltaZ = ml_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
+    }
+
+    double get_mu_el_p() {
+        int i = (int) mu_el / 100;
+        double deltaZ = mu_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_el_t() {
+        int i = (int) mu_el / 100;
+        double deltaZ = mu_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
+    }
+
+    double get_mu_e_el_p() {
+        int i = (int) mu_e_el / 100;
+        double deltaZ = mu_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (el_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_e_el_t() {
+        int i = (int) mu_e_el / 100;
+        double deltaZ = mu_e_el - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double el_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        return el_temp;
     }
 
     double get_sb_lcl() {
@@ -696,6 +932,66 @@ public:
 
     double get_mu_e_lcl() {
         return mu_e_lcl;
+    }
+
+    double get_sb_lcl_p() {
+        int i = (int) sb_lcl / 100;
+        double deltaZ = sb_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_sb_e_lcl_p() {
+        int i = (int) sb_e_lcl / 100;
+        double deltaZ = sb_e_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_ml_lcl_p() {
+        int i = (int) ml_lcl / 100;
+        double deltaZ = ml_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_ml_e_lcl_p() {
+        int i = (int) ml_e_lcl / 100;
+        double deltaZ = ml_e_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_lcl_p() {
+        int i = (int) mu_lcl / 100;
+        double deltaZ = mu_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
+    }
+
+    double get_mu_e_lcl_p() {
+        int i = (int) mu_e_lcl / 100;
+        double deltaZ = mu_e_lcl - (i * 100.0);
+        double layerDeltaT = interpolated_virtual_temperature[i+1] - interpolated_virtual_temperature[i];
+        double lcl_temp = (layerDeltaT / 100.0) * deltaZ + interpolated_virtual_temperature[i];
+        double mean_temp = (lcl_temp + interpolated_virtual_temperature[i]) / 2.0;
+        double power = -1 * (deltaZ * g ) / (R_d * mean_temp);
+        return interpolated_pressure[i] * std::exp(power);
     }
 
 
@@ -824,8 +1120,8 @@ public:
         return specific_humidity;
     }
 
-    std::vector<double> get_virtual_temperature(bool needs_celcius = false) {
-        if (needs_celcius) {
+    std::vector<double> get_virtual_temperature(bool needs_celsius = false) {
+        if (needs_celsius) {
             std::vector<double> cur;
             for (int i = 0; i < virtual_temperature.size(); i++) {
                 cur.push_back(virtual_temperature[i] - 273.15);
@@ -892,6 +1188,8 @@ private:
     double sb_e_el;
     double sb_3cape;
     double sb_3ecape;
+    double sb_6cape;
+    double sb_6ecape;
     double sb_lcin;
     double sb_lecin;
 
@@ -914,6 +1212,8 @@ private:
     double ml_e_el;
     double ml_3cape;
     double ml_3ecape;
+    double ml_6cape;
+    double ml_6ecape;
     double ml_lcin;
     double ml_lecin;
     double ml_lfc_p;
@@ -942,6 +1242,8 @@ private:
     double mu_e_el;
     double mu_3cape;
     double mu_3ecape;
+    double mu_6cape;
+    double mu_6ecape;
     double mu_lcin;
     double mu_lecin;
 
@@ -1067,7 +1369,7 @@ private:
 
     void calc_ml_entrainment_buoyancy();
 
-    std::tuple<double, double, double, double, double, double> calc_cape_and_cin(std::vector<double> buoyancy_profile);
+    std::tuple<double, double, double, double, double, double, double> calc_cape_and_cin(std::vector<double> buoyancy_profile);
 
     double compute_mixing_ratio_saturation_linear_combo(double T, double p);
 
@@ -1202,38 +1504,41 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
 
     calc_sbparcel_path();
 
-    std::tuple<double, double, double, double, double, double> sb_out = calc_cape_and_cin(sb_parcel_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> sb_out = calc_cape_and_cin(sb_parcel_buoyancy);
     sb_cape = std::get<0>(sb_out);
     sb_3cape = std::get<1>(sb_out);
-    sb_cin = std::get<2>(sb_out);
-    sb_lcin = std::get<3>(sb_out);
-    if (std::get<4>(sb_out) > sb_lfc) {
-        sb_lfc = std::get<4>(sb_out);
+    sb_6cape = std::get<2>(sb_out);
+    sb_cin = std::get<3>(sb_out);
+    sb_lcin = std::get<4>(sb_out);
+    if (std::get<5>(sb_out) > sb_lfc) {
+        sb_lfc = std::get<5>(sb_out);
     }
-    sb_el = std::get<5>(sb_out);
+    sb_el = std::get<6>(sb_out);
 
     calc_sbncape();
     calc_sbncape_peters();
     calc_sb_e_tilde_and_frac_entrainment();
     calc_sb_entrainment_buoyancy();
 
-    std::tuple<double, double, double, double, double, double> sb_e_out = calc_cape_and_cin(sb_entrainment_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> sb_e_out = calc_cape_and_cin(sb_entrainment_buoyancy);
     sb_ecape = std::get<0>(sb_e_out);
     sb_3ecape = std::get<1>(sb_e_out);
-    sb_ecin = std::get<2>(sb_e_out);
-    sb_lecin = std::get<3>(sb_e_out);
-    sb_e_lfc = std::get<4>(sb_e_out);
-    sb_e_el = std::get<5>(sb_e_out);
+    sb_6ecape = std::get<2>(sb_e_out);
+    sb_ecin = std::get<3>(sb_e_out);
+    sb_lecin = std::get<4>(sb_e_out);
+    sb_e_lfc = std::get<5>(sb_e_out);
+    sb_e_el = std::get<6>(sb_e_out);
 
     calc_mlparcel_path();
 
-    std::tuple<double, double, double, double, double, double> ml_out = calc_cape_and_cin(ml_parcel_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> ml_out = calc_cape_and_cin(ml_parcel_buoyancy);
     ml_cape = std::get<0>(ml_out);
     ml_3cape = std::get<1>(ml_out);
-    ml_cin = std::get<2>(ml_out);
-    ml_lcin = std::get<3>(ml_out);
-    ml_lfc = std::get<4>(ml_out);
-    ml_el = std::get<5>(ml_out);
+    ml_6cape = std::get<2>(ml_out);
+    ml_cin = std::get<3>(ml_out);
+    ml_lcin = std::get<4>(ml_out);
+    ml_lfc = std::get<5>(ml_out);
+    ml_el = std::get<6>(ml_out);
 
 
     if (std::isnan(ml_lfc) || ml_lfc < 0) {
@@ -1246,13 +1551,14 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     calc_ml_e_tilde_and_frac_entrainment();
     calc_ml_entrainment_buoyancy();
 
-    std::tuple<double, double, double, double, double, double> ml_e_out = calc_cape_and_cin(ml_entrainment_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> ml_e_out = calc_cape_and_cin(ml_entrainment_buoyancy);
     ml_ecape = std::get<0>(ml_e_out);
     ml_3ecape = std::get<1>(ml_e_out);
-    ml_ecin = std::get<2>(ml_e_out);
-    ml_lecin = std::get<3>(ml_e_out);
-    ml_e_lfc = std::get<4>(ml_e_out);
-    ml_e_el = std::get<5>(ml_e_out);
+    ml_6ecape = std::get<2>(ml_e_out);
+    ml_ecin = std::get<3>(ml_e_out);
+    ml_lecin = std::get<4>(ml_e_out);
+    ml_e_lfc = std::get<5>(ml_e_out);
+    ml_e_el = std::get<6>(ml_e_out);
 
     if (std::isnan(ml_e_lfc) || ml_e_lfc < 0 || ml_e_lfc > height[size - 1]) {
         ml_e_lfc_p = 0;
@@ -1262,25 +1568,27 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
 
     calc_muparcel_path();
 
-    std::tuple<double, double, double, double, double, double> mu_out = calc_cape_and_cin(mu_parcel_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> mu_out = calc_cape_and_cin(mu_parcel_buoyancy);
     mu_cape = std::get<0>(mu_out);
     mu_3cape = std::get<1>(mu_out);
-    mu_cin = std::get<2>(mu_out);
-    mu_lcin = std::get<3>(mu_out);
-    mu_lfc = std::get<4>(mu_out);
-    mu_el = std::get<5>(mu_out);
+    mu_6cape = std::get<2>(mu_out);
+    mu_cin = std::get<3>(mu_out);
+    mu_lcin = std::get<4>(mu_out);
+    mu_lfc = std::get<5>(mu_out);
+    mu_el = std::get<6>(mu_out);
 
     calc_muncape();
     calc_mu_e_tilde_and_frac_entrainment();
     calc_mu_entrainment_buoyancy();
 
-    std::tuple<double, double, double, double, double, double> mu_e_out = calc_cape_and_cin(mu_entrainment_buoyancy);
+    std::tuple<double, double, double, double, double, double, double> mu_e_out = calc_cape_and_cin(mu_entrainment_buoyancy);
     mu_ecape = std::get<0>(mu_e_out);
     mu_3ecape = std::get<1>(mu_e_out);
-    mu_ecin = std::get<2>(mu_e_out);
-    mu_lecin = std::get<3>(mu_e_out);
-    mu_e_lfc = std::get<4>(mu_e_out);
-    mu_e_el = std::get<5>(mu_e_out);
+    mu_6ecape = std::get<2>(mu_e_out);
+    mu_ecin = std::get<3>(mu_e_out);
+    mu_lecin = std::get<4>(mu_e_out);
+    mu_e_lfc = std::get<5>(mu_e_out);
+    mu_e_el = std::get<6>(mu_e_out);
 }
 
 Sounding::~Sounding() {
@@ -1843,10 +2151,11 @@ void Sounding::calc_sbparcel_path() {
 }
 
 //returns {CAPE, 3CAPE, CIN, LCIN, LFC, EL}
-std::tuple<double, double, double, double, double, double> Sounding::calc_cape_and_cin(std::vector<double> buoyancy_profile) {
+std::tuple<double, double, double, double, double, double, double> Sounding::calc_cape_and_cin(std::vector<double> buoyancy_profile) {
     int i = (int)buoyancy_profile.size() - 1;
     double CAPE = 0;
     double CAPE3k = 0;
+    double CAPE6k = 0;
     double CIN = 0;
     double LCIN = 0;
     double LFC = 0;
@@ -1859,11 +2168,14 @@ std::tuple<double, double, double, double, double, double> Sounding::calc_cape_a
             if(EL <= 3000) {
                 CAPE3k += (buoyancy_profile[i-1]) / 2 * (EL - height[i-1]);
             }
+            if (EL <= 6000) {
+                CAPE6k += (buoyancy_profile[i-1]) / 2 * (EL - height[i-1]);
+            }
             CAPE += (buoyancy_profile[i-1]) / 2 * (EL - height[i-1]);
         }
         i--;
         if(i == 0) {
-            return {CAPE, CAPE3k, CIN, LCIN, LFC, EL};
+            return {CAPE, CAPE3k, CAPE6k, CIN, LCIN, LFC, EL};
         }
     }
     bool keepGoing = true;
@@ -1879,6 +2191,9 @@ std::tuple<double, double, double, double, double, double> Sounding::calc_cape_a
             if(height[i] <= 3000) {
                 CAPE3k += (buoyancy_profile[i]) / 2 * (height[i] - LFC);
             }
+            if(height[i] <= 6000) {
+                CAPE6k += (buoyancy_profile[i]) / 2 * (height[i] - LFC);
+            }
             CAPE += (buoyancy_profile[i]) / 2 * (height[i] - LFC);
             CIN += (buoyancy_profile[i-1]) / 2 * (LFC - height[i-1]);
             
@@ -1892,6 +2207,9 @@ std::tuple<double, double, double, double, double, double> Sounding::calc_cape_a
         } else {
             if(height[i] <= 3000) {
                 CAPE3k += (buoyancy_profile[i] + buoyancy_profile[i-1]) / 2 * (height[i] - height[i-1]);
+            }
+            if(height[i] <= 6000) {
+                CAPE6k += (buoyancy_profile[i] + buoyancy_profile[i-1]) / 2 * (height[i] - height[i-1]);
             }
             CAPE += (buoyancy_profile[i] + buoyancy_profile[i-1]) / 2 * (height[i] - height[i-1]);
         }
@@ -1940,7 +2258,7 @@ std::tuple<double, double, double, double, double, double> Sounding::calc_cape_a
         }
     }
     
-    return {CAPE, CAPE3k, CIN, LCIN, LFC, EL};
+    return {CAPE, CAPE3k, CAPE6k, CIN, LCIN, LFC, EL};
 }
 
 void Sounding::calc_sbncape() {
@@ -2209,7 +2527,7 @@ void Sounding::calc_sb_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        sb_entrainment_temp.push_back(T_lif[i]);
+        sb_entrainment_temp.push_back(T_rho_lif[i]);
     }
     
     /*
@@ -2688,7 +3006,7 @@ void Sounding::calc_ml_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        ml_entrainment_temp.push_back(T_lif[i]);
+        ml_entrainment_temp.push_back(T_rho_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -2959,7 +3277,7 @@ void Sounding::calc_mu_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        mu_entrainment_temp.push_back(T_lif[i]);
+        mu_entrainment_temp.push_back(T_rho_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {

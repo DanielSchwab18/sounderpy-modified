@@ -203,6 +203,48 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
     thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
 
+    thermo['esbT_trace'] = np.ma.asarray(s.get_sb_entrainment_parcel_temp(True))
+    thermo['esbP_trace'] = np.ma.asarray(s.get_pressure(True))
+
+    thermo['sb_lcl_p'] = s.get_sb_lcl_p()
+    thermo['sb_lcl_z'] = s.get_sb_lcl()
+    thermo['sb_lfc_p'] = s.get_sb_lfc()
+    thermo['sb_lfc_z'] = s.get_sb_lfc()
+    thermo['sb_el_p'] = s.get_sb_el_p()
+    thermo['sb_el_z'] = s.get_sb_el()
+    thermo['sb_el_T'] = s.get_sb_el_t()
+    thermo['sb_mpl_p'] = np.float64('nan')
+    thermo['sbcape'] = s.get_sbcape()
+    thermo['sbcin'] = s.get_sbcin()
+    thermo['sb3cape'] = s.get_sb3cape()
+    thermo['sb6cape'] = s.get_sb6cape()
+
+    thermo['ml_lcl_p'] = s.get_ml_lcl_p()
+    thermo['ml_lcl_z'] = s.get_ml_lcl()
+    thermo['ml_lfc_p'] = s.get_ml_lfc()
+    thermo['ml_lfc_z'] = s.get_ml_lfc()
+    thermo['ml_el_p'] = s.get_ml_el_p()
+    thermo['ml_el_z'] = s.get_ml_el()
+    thermo['ml_el_T'] = s.get_ml_el_t()
+    thermo['ml_mpl_p'] = np.float64('nan')
+    thermo['mlcape'] = s.get_mlcape()
+    thermo['mlcin'] = s.get_mlcin()
+    thermo['ml3cape'] = s.get_ml3cape()
+    thermo['ml6cape'] = s.get_ml6cape()
+
+    thermo['mu_lcl_p'] = s.get_mu_lcl_p()
+    thermo['mu_lcl_z'] = s.get_mu_lcl()
+    thermo['mu_lfc_p'] = s.get_mu_lfc()
+    thermo['mu_lfc_z'] = s.get_mu_lfc()
+    thermo['mu_el_p'] = s.get_mu_el_p()
+    thermo['mu_el_z'] = s.get_mu_el()
+    thermo['mu_el_T'] = s.get_mu_el_t()
+    thermo['mu_mpl_p'] = np.float64('nan')
+    thermo['mucape'] = s.get_mucape()
+    thermo['mucin'] = s.get_mucin()
+    thermo['mu3cape'] = s.get_mu3cape()
+    thermo['mu6cape'] = s.get_mu6cape()
+
     
     #################################################################
     ### DECLARE PLOT TITLES FROM CLEAN_DATA ###
@@ -401,7 +443,8 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
 
                 trace_Trho = density_temperature(trace[2], trace[3], trace[4])
 
-                muecapeline = skew.plot(trace[0], trace_Trho, 
+
+                muecapeline = skew.plot(thermo['esbP_trace'], thermo['esbT_trace'], 
                                         linestyle='--', linewidth=3, alpha=1, color='k',
                                         label='MUECAPE PARCEL')
             
@@ -1405,7 +1448,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     plt.figtext( 0.485, 0.04, f"{mag(thermo['sb_lcl_z'])} "+r"$\mathrm{\mathbf{m}}$",   fontsize=15, color='#c62828', weight='bold')
     #MLCAPE
     plt.figtext( 0.13,  0.01, f"ML:", weight='bold',   fontsize=15, color=gen_txt_clr)
-    plt.figtext( 0.13,  0.002, f"100 hPa", weight='bold', fontsize=7, color=gen_txt_clr, alpha=0.5)
+    plt.figtext( 0.13,  0.002, f"50 hPa", weight='bold', fontsize=7, color=gen_txt_clr, alpha=0.5)
     plt.figtext( 0.17,  0.01, f"{mag(thermo['ml_ecape'])} "+ r"$\mathrm{\mathbf{Jkg^{-1}}}$",  fontsize=15, color='#d95f02', weight='bold')
     plt.figtext( 0.235,  0.01, f"{mag(thermo['mlcape'])} "+ r"$\mathrm{\mathbf{Jkg^{-1}}}$",  fontsize=15, color='#d95f02', weight='bold')
     plt.figtext( 0.30,  0.01, f"{mag(thermo['ml6cape'])} "+ r"$\mathrm{\mathbf{Jkg^{-1}}}$", fontsize=15, color='#d95f02', weight='bold')

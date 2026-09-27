@@ -31,6 +31,7 @@ int main()
     Sounding s = Sounding(file, true, true, 100);
     std::cout << s.get_srh(0, 500) << std::endl;
     std::cout << s.compute_stp() << std::endl;
+    std::cout << s.get_mu_lcl() << std::endl;
 
     /*
     //EveryLevelBuoyancy e = EveryLevelBuoyancy();
