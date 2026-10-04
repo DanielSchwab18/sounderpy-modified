@@ -155,6 +155,20 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_potential_temperature", &Sounding::get_potential_temperature)
         .def("get_sfc_pressure", &Sounding::get_sfc_pressure)
 
+        //EIL
+        .def("get_base_eil_p", &Sounding::get_base_eil_p)
+        .def("get_base_eil_p", &Sounding::get_base_eil_z)
+        .def("get_top_eil_z", &Sounding::get_top_eil_p)
+        .def("get_top_eil_z", &Sounding::get_top_eil_z)
+        
+        //Storm Motions
+        .def("get_rm_bunkers_u", &Sounding::get_rm_bunkers_u)
+        .def("get_rm_bunkers_v", &Sounding::get_rm_bunkers_v)
+        .def("get_lm_bunkers_u", &Sounding::get_lm_bunkers_u)
+        .def("get_lm_bunkers_v", &Sounding::get_lm_bunkers_v)
+        .def("get_mean_wind_sm_u", &Sounding::get_mean_wind_sm_u)
+        .def("get_mean_wind_sm_v", &Sounding::get_mean_wind_sm_v)
+        
 
         .def("get_height", &Sounding::get_height)
         .def("get_pressure", &Sounding::get_pressure);

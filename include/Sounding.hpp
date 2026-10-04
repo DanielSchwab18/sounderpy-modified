@@ -546,12 +546,28 @@ public:
         return mu_e_a;
     }
     
-    double get_bunkers_u() {
-        return bunkers_u_peters;
+    double get_rm_bunkers_u() {
+        return interpolated_rm_bunkers_u;
     }
     
-    double get_bunkers_v() {
-        return bunkers_v_peters;
+    double get_rm_bunkers_v() {
+        return interpolated_rm_bunkers_v;
+    }
+
+    double get_lm_bunkers_u() {
+        return interpolated_lm_bunkers_u;
+    }
+
+    double get_lm_bunkers_v() {
+        return interpolated_lm_bunkers_v;
+    }
+
+    double get_mean_wind_sm_u() {
+        return interpolated_mean_sm_u;
+    }
+
+    double get_mean_wind_sm_v() {
+        return interpolated_mean_sm_v;
     }
 
     //Gets surface based buoyancy at the passed height
@@ -1135,6 +1151,22 @@ public:
         return pressure[0];
     }
 
+    double get_base_eil_p() {
+        return eil_base_p;
+    }
+
+    double get_base_eil_z() {
+        return eil_base_z;
+    }
+
+    double get_top_eil_p() {
+        return eil_top_p;
+    }
+
+    double get_top_eil_z() {
+        return eil_top_z;
+    }
+
 
 private:
     double L_v = 2501000.0;
@@ -1160,8 +1192,14 @@ private:
 
     double bunkers_u_peters = 0;
     double bunkers_v_peters = 0;
-    double interpolated_bunkers_u = 0;
-    double interpolated_bunkers_v = 0;
+    double interpolated_rm_bunkers_u = 0;
+    double interpolated_rm_bunkers_v = 0;
+
+    double interpolated_lm_bunkers_u = 0;
+    double interpolated_lm_bunkers_v = 0;
+
+    double interpolated_mean_sm_u = 0;
+    double interpolated_mean_sm_v = 0;
 
     double mixed_parcel_start_temp = 0;
     double mixed_parcel_start_mixing_ratio = 0;
@@ -1250,6 +1288,11 @@ private:
     double mu_lcl;
     double mu_e_lcl;
 
+    double eil_base_p;
+    double eil_base_z;
+    double eil_top_p;
+    double eil_top_z;
+
     std::vector<double> pressure;
     std::vector<double> temperature;
     std::vector<double> dewpoint;
@@ -1337,6 +1380,8 @@ private:
 
     void calc_right_moving_bunkers_motion_peters();
 
+    void calc_mean_wind_interpolated(int lower_bound, int upper_bound);
+
     void calc_storm_relative_winds();
 
     void calc_storm_relative_helicity();
@@ -1352,6 +1397,8 @@ private:
     void calc_mlparcel_path();
 
     void calc_sbparcel_path();
+
+    std::vector<double> calc_parcel_from_level(int index);
 
     double calc_saturation_mixing_ratio(double T, double p);
 
@@ -1481,6 +1528,7 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
 
     calc_right_moving_bunkers_motion_interpolated();
     calc_right_moving_bunkers_motion_peters();
+    calc_mean_wind_interpolated(850, 250);
     calc_storm_relative_winds();
 
     calc_storm_relative_helicity();
@@ -1589,6 +1637,23 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     mu_lecin = std::get<4>(mu_e_out);
     mu_e_lfc = std::get<5>(mu_e_out);
     mu_e_el = std::get<6>(mu_e_out);
+
+    int start_eil = -1;
+    int end_eil = -1;
+    for (int i = 0; i < size; i++) {
+        std::vector<double> cur_profile = calc_parcel_from_level(i);
+        std::tuple<double, double, double, double, double, double, double> cur_out = calc_cape_and_cin(cur_profile);
+        if (start_eil == -1 && std::get<0>(cur_out) > 100 && std::get<3>(cur_out) < 250) {
+            start_eil = i;
+        } else if (start_eil != -1 && end_eil == -1) {
+            end_eil = i;
+            break;
+        }
+    }
+    eil_base_p = pressure[start_eil];
+    eil_base_z = height[start_eil];
+    eil_top_p = pressure[end_eil];
+    eil_top_z = height[end_eil];
 }
 
 Sounding::~Sounding() {
@@ -1878,8 +1943,30 @@ void Sounding::calc_right_moving_bunkers_motion_interpolated() {
     bunkers_rm_u_change /= length;
     bunkers_rm_v_change /= length;
 
-    interpolated_bunkers_u = mean_u + bunkers_rm_u_change * 7.5;
-    interpolated_bunkers_v = mean_v + bunkers_rm_v_change * 7.5;
+    interpolated_rm_bunkers_u = mean_u + bunkers_rm_u_change * 7.5;
+    interpolated_rm_bunkers_v = mean_v + bunkers_rm_v_change * 7.5;
+
+    interpolated_lm_bunkers_u = mean_u - bunkers_rm_u_change * 7.5;
+    interpolated_lm_bunkers_v = mean_v - bunkers_rm_v_change * 7.5;
+}
+
+void Sounding::calc_mean_wind_interpolated(int lower_bound = 850, int upper_bound = 250) {
+    double integral_u = 0.0;
+    double integral_v = 0.0;
+    double pressureRange = 0.0;
+
+    for (int i= 0; i < interpolated_size; i++) {
+        double dp = interpolated_pressure[i] - interpolated_pressure[i - 1];
+
+        // Trapezoidal integration of x dp
+        integral_u += 0.5 * (interpolated_wind_u[i] + interpolated_wind_u[i + 1]) * dp;
+        integral_v += 0.5 * (interpolated_wind_v[i] + interpolated_wind_v[i + 1]) * dp;
+
+        pressureRange += dp;
+    }
+    interpolated_mean_sm_u = integral_u / interpolated_size;
+    interpolated_mean_sm_v = integral_v / interpolated_size;
+
 }
 
 void Sounding::calc_right_moving_bunkers_motion_peters() {
@@ -1961,8 +2048,8 @@ void Sounding::calc_right_moving_bunkers_motion_peters() {
 
 void Sounding::calc_storm_relative_winds() {
     for (int i = 0; i < interpolated_wind_u.size(); i++) {
-        interpolated_storm_relative_wind_u.push_back(interpolated_wind_u[i] - interpolated_bunkers_u);
-        interpolated_storm_relative_wind_v.push_back(interpolated_wind_v[i] - interpolated_bunkers_v);
+        interpolated_storm_relative_wind_u.push_back(interpolated_wind_u[i] - interpolated_rm_bunkers_u);
+        interpolated_storm_relative_wind_v.push_back(interpolated_wind_v[i] - interpolated_rm_bunkers_v);
         interpolated_storm_relative_wind.push_back(std::pow(std::pow(interpolated_storm_relative_wind_u[i], 2.0) + std::pow(interpolated_storm_relative_wind_v[i], 2.0), 0.5));
     }
     
@@ -1975,8 +2062,8 @@ void Sounding::calc_storm_relative_winds() {
 
 void Sounding::calc_storm_relative_helicity() {
     for (int i = 0; i < interpolated_height.size() - 1; i++) {
-        double first_term = (interpolated_wind_u[i + 1] - interpolated_bunkers_u) * (interpolated_wind_v[i] - interpolated_bunkers_v);
-        double second_term = (interpolated_wind_u[i] - interpolated_bunkers_u) * (interpolated_wind_v[i + 1] - interpolated_bunkers_v);;
+        double first_term = (interpolated_wind_u[i + 1] - interpolated_rm_bunkers_u) * (interpolated_wind_v[i] - interpolated_rm_bunkers_v);
+        double second_term = (interpolated_wind_u[i] - interpolated_rm_bunkers_u) * (interpolated_wind_v[i + 1] - interpolated_rm_bunkers_v);;
         
         double srh = first_term - second_term;
         interpolated_storm_relative_helicity.push_back(srh);
@@ -1995,10 +2082,10 @@ void Sounding::calc_storm_relative_helicity() {
 void Sounding::calc_storm_relative_streamwise_vorticity() {
     for (int i = 0; i < interpolated_height.size() - 1; i++) {
         double numerator_term_1a = (interpolated_wind_v[i+1] - interpolated_wind_v[i]) / (interpolated_height[i+1] - interpolated_height[i]);
-        double numerator_term_1b = (interpolated_wind_u[i+1] + interpolated_wind_u[i]) / 2.0 - interpolated_bunkers_u;
+        double numerator_term_1b = (interpolated_wind_u[i+1] + interpolated_wind_u[i]) / 2.0 - interpolated_rm_bunkers_u;
 
         double numerator_term_2a = (interpolated_wind_u[i+1] - interpolated_wind_u[i]) / (interpolated_height[i+1] - interpolated_height[i]);
-        double numerator_term_2b = (interpolated_wind_v[i+1] + interpolated_wind_v[i]) / 2.0 - interpolated_bunkers_v;
+        double numerator_term_2b = (interpolated_wind_v[i+1] + interpolated_wind_v[i]) / 2.0 - interpolated_rm_bunkers_v;
 
         double numerator = -1 * numerator_term_1a * numerator_term_1b + numerator_term_2a * numerator_term_2b;
         double denominator = std::pow(numerator_term_1b * numerator_term_1b + numerator_term_2b * numerator_term_2b,0.5);
@@ -2147,7 +2234,79 @@ void Sounding::calc_sbparcel_path() {
     for (int i = 0; i < T_rho_lif.size(); i++) {
         sb_parcel_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
     }
+}
 
+std::vector<double> Sounding::calc_parcel_from_level(int index) {
+    //This is functionally identical to the code from Peters 2023.
+    std::vector<double> T_lif;
+    std::vector<double> Q_v_lif;
+    std::vector<double> Q_t_lif;
+    T_lif.push_back(temperature[index]);
+    Q_v_lif.push_back(specific_humidity[index]);
+    Q_t_lif.push_back(specific_humidity[index]);
+
+    double q_sat_prev = 0;
+    unsigned long i = index;
+
+    while (i < size - 1) {
+        i++;
+        double q_sat = (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - 1], pressure[i - 1]);
+
+        if (Q_v_lif[i-1]<q_sat) {
+            T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0));
+            //std::cout << "i: " << i << " T_lif[i]: " << T_lif[i] << std::endl;
+            Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
+            Q_t_lif.push_back(Q_v_lif[i]);
+            q_sat_prev = q_sat;
+            q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
+
+            if (Q_v_lif[i] >= q_sat) {
+                double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
+                double dz_dry = satrat * (height[i] - height[i - 1]);
+                double dz_wet = (1 - satrat) * (height[i] - height[i - 1]);
+
+                double T_halfstep = T_lif[i - 1] + dz_dry * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0);
+                double Qv_halfstep = Q_v_lif[i - 1] - dz_dry * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]);
+                double Qt_halfstep = Q_v_lif[i];
+                double p_halfstep = pressure[i - 1] * satrat + pressure[i] * (1 - satrat);
+                double T0_halfstep = temperature[i - 1] * satrat + temperature[i] * (1 - satrat);
+                double Q0_halfstep = specific_humidity[i - 1] * satrat + specific_humidity[i] * (1 - satrat);
+
+                T_lif[i] = T_halfstep + dz_wet * calc_moist_lapse_rate_peters_no_e(T_halfstep, Qv_halfstep, (1 - Qt_halfstep) * compute_mixing_ratio_saturation_linear_combo(T_halfstep, p_halfstep), (1 - Qt_halfstep) * compute_mixing_ratio_saturation_all_ice(T_halfstep, p_halfstep), p_halfstep, T0_halfstep, Q0_halfstep, Qt_halfstep);
+
+
+                Q_t_lif[i] = Q_t_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Qt_halfstep - Q0_halfstep);
+                Q_v_lif[i] = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
+
+                if (Q_t_lif[i] < Q_v_lif[i]) {
+                    Q_v_lif[i] = Q_t_lif[i];
+                }
+            }
+        }
+        else {
+            T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1]));
+            Q_t_lif.push_back(Q_t_lif[i - 1] - (height[i] - height[i - 1]) * (0 * (Q_t_lif[i - 1] - specific_humidity[i - 1])));
+            Q_v_lif.push_back((1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]));
+
+            if (Q_t_lif[i] < Q_v_lif[i]) {
+                Q_v_lif[i] = Q_t_lif[i];
+            }
+        }
+    }
+
+    std::vector<double> T_rho_lif;
+    std::vector<double> T_0_lif;
+    std::vector<double> buoyancy_profile;
+
+    for (int i = 0; i < T_lif.size(); i++) {
+        T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
+        T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
+    }
+    for (int i = 0; i < T_rho_lif.size(); i++) {
+        buoyancy_profile.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
+    }
+
+    return buoyancy_profile;
 }
 
 //returns {CAPE, 3CAPE, CIN, LCIN, LFC, EL}

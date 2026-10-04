@@ -245,6 +245,61 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     thermo['mu3cape'] = s.get_mu3cape()
     thermo['mu6cape'] = s.get_mu6cape()
 
+    thermo['mu_ncape'] = round(thermo['mucape'] / (thermo['mu_el_z'] - thermo['mu_lfc_z']),3) # Original sounderpy rounds to 1 digit
+    thermo['sb_ncape'] = round(thermo['sbcape'] / (thermo['sb_el_z'] - thermo['sb_lfc_z']),3)
+    thermo['ml_ncape'] = round(thermo['mlcape'] / (thermo['ml_el_z'] - thermo['ml_lfc_z']),3) 
+    thermo['dcape'] = np.float64('nan')
+    thermo['dcin'] = np.float64('nan')
+    thermo['dparcel_p'] = None
+    thermo['dparcel_T'] = None
+    thermo['cape_profile'] = None
+    thermo['cin_profile'] = None
+    thermo['3cape_profile'] = None
+
+    thermo['pbl_top'] = np.float64('nan')
+    thermo['dgz'] = None
+    thermo['hgz'] = None
+    thermo['lr_36km'] = np.float64('nan')
+    thermo['lr_03km'] = np.float64('nan')
+    thermo['lr_max'] = None
+    thermo['temp_adv'] = None
+
+    thermo['sb_ecape'] = s.get_sbecape()
+    thermo['ml_ecape'] = s.get_mlecape()
+    thermo['mu_ecape'] = s.get_muecape()
+
+    kinem['eil'] = (s.get_base_eil_p, s.get_top_eil_p) 
+    kinem['eil_z'] = (s.get_base_eil_z, s.get_top_eil_z)
+    kinem['sm_rm'] = (s.get_rm_bunkers_u(), s.get_rm_bunkers_v())
+    kinem['sm_lm'] = (s.get_lm_bunkers_u(), s.get_lm_bunkers_v())
+    kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
+    kinem['sm_u'] = kinem['sm_rm'][0]
+    kinem['sm_v'] = kinem['sm_rm'][1]
+    kinem['dtm'] = None
+    kinem['mcs'] = None
+    kinem['shear_0_to_500'] = s.get_shear(0, 500)
+    kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
+    kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
+    kinem['shear_3_to_6000'] = s.get_shear(3000, 6000)
+    kinem['shear_6_to_9000'] = s.get_shear(6000, 9000)
+    kinem['shear_0_to_3000'] = s.get_shear(0, 3000)
+    kinem['shear_0_to_6000'] = s.get_shear(0, 6000)
+    kinem['shear_eil'] = s.get_shear(kinem['eil_z'][0], kinem['eil_z'][1])
+    kinem['srh_0_to_500'] = s.get_srh(0, 500)
+    kinem['srh_0_to_1000'] = s.get_srh(0, 1000)
+    kinem['srh_1_to_3000'] = s.get_srh(1000, 3000)
+    kinem['srh_3_to_6000'] = s.get_srh(3000, 6000)
+    kinem['srh_6_to_9000'] = s.get_srh(6000, 9000)
+    kinem['srh_0_to_3000'] = s.get_srh(0, 3000)
+    kinem['srh_0_to_6000'] = s.get_srh(0, 6000)
+    kinem['srh_eil'] = s.get_srh(kinem['eil_z'][0], kinem['eil_z'][1])
+    kinem['srw_0_to_500'] = s.get_srw(0, 500) * units.kts
+    kinem['srw_0_to_1000'] = s.get_srw(0, 1000) * units.kts
+    kinem['srw_1_to_3000'] = s.get_srw(1000, 3000) * units.kts
+    kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
+    kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
+    kinem['srw_eil'] = s.get_srw(kinem['eil_z'][0], kinem['eil_z'][1]) * units.kts
+
     
     #################################################################
     ### DECLARE PLOT TITLES FROM CLEAN_DATA ###
@@ -465,8 +520,10 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
 
             
     # ADD DOWNDRAFT PARCEL TRACE
-    skew.plot(thermo['dparcel_p'], thermo['dparcel_T'], linestyle='--',linewidth=0.75, color='purple', 
-              alpha=0.8, label='DWNDRFT PARCEL')
+    # Add nullcheck since downdraft not in C++ code
+    if((thermo['dparcel_p'] != None) and (thermo['dparcel_T'] != None)):
+        skew.plot(thermo['dparcel_p'], thermo['dparcel_T'], linestyle='--',linewidth=0.75, color='purple', 
+                alpha=0.8, label='DWNDRFT PARCEL')
     
     
     #################################################################
@@ -615,12 +672,14 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
             
             
     # MAX LAPSE RATE ANNOTATION---------------------------------
-    x_start, x_end = 0.15, 0.17
-    x_mid = (x_start + x_end)/2
-    Lapse_line = plt.Line2D([x_mid, x_mid], (thermo['lr_max'][1], thermo['lr_max'][2]), color='firebrick', linewidth=3, alpha=0.3, transform=skew.ax.get_yaxis_transform())
-    plt.text((x_start-0.005), (thermo['lr_max'][2]-8), f"{np.round(thermo['lr_max'][0],1)}", 
-             color='firebrick', weight='bold', fontsize=13, alpha=0.6, transform=skew.ax.get_yaxis_transform())
-    skew.ax.add_artist(Lapse_line)
+    # Add nullcheck since lapse rate output not in C++ code
+    if(thermo['lr_max'] != None):
+        x_start, x_end = 0.15, 0.17
+        x_mid = (x_start + x_end)/2
+        Lapse_line = plt.Line2D([x_mid, x_mid], (thermo['lr_max'][1], thermo['lr_max'][2]), color='firebrick', linewidth=3, alpha=0.3, transform=skew.ax.get_yaxis_transform())
+        plt.text((x_start-0.005), (thermo['lr_max'][2]-8), f"{np.round(thermo['lr_max'][0],1)}", 
+                color='firebrick', weight='bold', fontsize=13, alpha=0.6, transform=skew.ax.get_yaxis_transform())
+        skew.ax.add_artist(Lapse_line)
 
     # EFFECTIVE INFLOW LAYER ANNOTATION--------------------------
     x_start, x_end = 0.18, 0.20
@@ -640,7 +699,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
       
     # HGZ ANNOTATION-------------------------------
     else:
-        if thermo['hgz'][1] < p[0].m:
+        if ((thermo['hgz'] != None) and (thermo['hgz'][1] < p[0].m)):
             x_start, x_end = 0.12, 0.14
             x_mid = (x_start + x_end)/2
             plt.text((x_start+0.01), (thermo['hgz'][1]-8), "HGZ", weight='bold',color='green', alpha=0.6, ha='center', fontsize=13, transform=skew.ax.get_yaxis_transform())
@@ -1052,45 +1111,47 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     #################################################################
     ### TEMPERATURE ADVECTION ###
     #################################################################
+    # add nullcheck for temp advection since not in C++ code 
     print(f'    > BUILDING ACCESSORY PLOTS')
-    # GET TOP AND BOTTOM BOUND FOR EACH 'BIN'
-    bot_arr, top_arr = np.hsplit(thermo['temp_adv'][1],2)
-    bot_arr, top_arr = bot_arr.flatten(), top_arr.flatten()
-    #CREATE FIGURE
-    temp_adv_ax = plt.axes((0.701,0.1003,0.04,0.85))
-    temp_adv_ax.spines["top"].set_color(brdr_clr)
-    temp_adv_ax.spines["left"].set_color(brdr_clr)
-    temp_adv_ax.spines["right"].set_color(brdr_clr)
-    temp_adv_ax.spines["bottom"].set_color(brdr_clr)
-    temp_adv_ax.spines["bottom"].set_color(brdr_clr)   
-    temp_adv_ax.set_facecolor(bckgrnd_clr)    
-    plt.yscale('log')
-    temp_adv_ax.set_ylim(1050, 100)
-    temp_adv_ax.set_xlim(np.nanmin(thermo['temp_adv'][0])-4, np.nanmax(thermo['temp_adv'][0])+4)
-    plt.ylabel(' '), plt.xlabel(' ')
-    temp_adv_ax.set_yticklabels([]), temp_adv_ax.set_xticklabels([])
-    temp_adv_ax.tick_params(axis='y', length = 0), temp_adv_ax.tick_params(axis='x', length = 0)
-    # ADD LINES
-    lvls = [1000, 900, 800, 700, 600, 500, 400, 300, 200]
-    for lvl in lvls:
-        plt.plot((-20,20), (lvl,lvl), color='gray', alpha=0.8, linewidth=1, linestyle='-', clip_on=True)
-    # PLOT TEMP ADV BINS 
-    for i in range(len(thermo['temp_adv'][0])):
-                        if thermo['temp_adv'][0][i] <= 0:
-                            temp_adv_bxclr = 'cornflowerblue'
-                        elif thermo['temp_adv'][0][i]  > 0:
-                            temp_adv_bxclr = 'red'
-                        temp_adv_ax.barh(top_arr[i], thermo['temp_adv'][0][i], align='center', 
-                                            height=bot_arr[i]-top_arr[i], edgecolor='black', alpha=0.3, color=temp_adv_bxclr)
-                        if thermo['temp_adv'][0][i] > 0:
-                            temp_adv_ax.annotate((np.round(thermo['temp_adv'][0][i],1)), 
-                                                    xy=(0.3, top_arr[i]+10), color=gen_txt_clr, textcoords='data', 
-                                                    ha='left', weight='bold')
-                        if thermo['temp_adv'][0][i] < 0:
-                            temp_adv_ax.annotate((np.round(thermo['temp_adv'][0][i],1)), 
-                                                    xy=(-0.3, top_arr[i]+10), color=gen_txt_clr, textcoords='data', 
-                                                    ha='right', weight='bold')
-    temp_adv_ax.axvline(x=0, color=gen_txt_clr, linewidth=1, linestyle='--', clip_on=True)
+    if(thermo['temp_adv'] != None):
+        # GET TOP AND BOTTOM BOUND FOR EACH 'BIN'
+        bot_arr, top_arr = np.hsplit(thermo['temp_adv'][1],2)
+        bot_arr, top_arr = bot_arr.flatten(), top_arr.flatten()
+        #CREATE FIGURE
+        temp_adv_ax = plt.axes((0.701,0.1003,0.04,0.85))
+        temp_adv_ax.spines["top"].set_color(brdr_clr)
+        temp_adv_ax.spines["left"].set_color(brdr_clr)
+        temp_adv_ax.spines["right"].set_color(brdr_clr)
+        temp_adv_ax.spines["bottom"].set_color(brdr_clr)
+        temp_adv_ax.spines["bottom"].set_color(brdr_clr)   
+        temp_adv_ax.set_facecolor(bckgrnd_clr)    
+        plt.yscale('log')
+        temp_adv_ax.set_ylim(1050, 100)
+        temp_adv_ax.set_xlim(np.nanmin(thermo['temp_adv'][0])-4, np.nanmax(thermo['temp_adv'][0])+4)
+        plt.ylabel(' '), plt.xlabel(' ')
+        temp_adv_ax.set_yticklabels([]), temp_adv_ax.set_xticklabels([])
+        temp_adv_ax.tick_params(axis='y', length = 0), temp_adv_ax.tick_params(axis='x', length = 0)
+        # ADD LINES
+        lvls = [1000, 900, 800, 700, 600, 500, 400, 300, 200]
+        for lvl in lvls:
+            plt.plot((-20,20), (lvl,lvl), color='gray', alpha=0.8, linewidth=1, linestyle='-', clip_on=True)
+        # PLOT TEMP ADV BINS 
+        for i in range(len(thermo['temp_adv'][0])):
+                            if thermo['temp_adv'][0][i] <= 0:
+                                temp_adv_bxclr = 'cornflowerblue'
+                            elif thermo['temp_adv'][0][i]  > 0:
+                                temp_adv_bxclr = 'red'
+                            temp_adv_ax.barh(top_arr[i], thermo['temp_adv'][0][i], align='center', 
+                                                height=bot_arr[i]-top_arr[i], edgecolor='black', alpha=0.3, color=temp_adv_bxclr)
+                            if thermo['temp_adv'][0][i] > 0:
+                                temp_adv_ax.annotate((np.round(thermo['temp_adv'][0][i],1)), 
+                                                        xy=(0.3, top_arr[i]+10), color=gen_txt_clr, textcoords='data', 
+                                                        ha='left', weight='bold')
+                            if thermo['temp_adv'][0][i] < 0:
+                                temp_adv_ax.annotate((np.round(thermo['temp_adv'][0][i],1)), 
+                                                        xy=(-0.3, top_arr[i]+10), color=gen_txt_clr, textcoords='data', 
+                                                        ha='right', weight='bold')
+        temp_adv_ax.axvline(x=0, color=gen_txt_clr, linewidth=1, linestyle='--', clip_on=True)
     #################################################################
 
 
