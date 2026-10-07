@@ -268,15 +268,15 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     thermo['ml_ecape'] = s.get_mlecape()
     thermo['mu_ecape'] = s.get_muecape()
 
-    kinem['eil'] = (s.get_base_eil_p, s.get_top_eil_p) 
-    kinem['eil_z'] = (s.get_base_eil_z, s.get_top_eil_z)
+    kinem['eil'] = (s.get_base_eil_p(), s.get_top_eil_p()) 
+    kinem['eil_z'] = (s.get_base_eil_z(), s.get_top_eil_z())
     kinem['sm_rm'] = (s.get_rm_bunkers_u(), s.get_rm_bunkers_v())
     kinem['sm_lm'] = (s.get_lm_bunkers_u(), s.get_lm_bunkers_v())
     kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
     kinem['sm_u'] = kinem['sm_rm'][0]
     kinem['sm_v'] = kinem['sm_rm'][1]
-    kinem['dtm'] = None
-    kinem['mcs'] = None
+    #kinem['dtm'] = (0.0,  0.0) #TODO: find out what this is, and compute it.
+    #kinem['mcs'] = (0.0,  0.0, 0.0,  0.0)
     kinem['shear_0_to_500'] = s.get_shear(0, 500)
     kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
     kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
@@ -284,7 +284,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['shear_6_to_9000'] = s.get_shear(6000, 9000)
     kinem['shear_0_to_3000'] = s.get_shear(0, 3000)
     kinem['shear_0_to_6000'] = s.get_shear(0, 6000)
-    kinem['shear_eil'] = s.get_shear(kinem['eil_z'][0], kinem['eil_z'][1])
+    kinem['shear_eil'] = s.get_shear(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
     kinem['srh_0_to_500'] = s.get_srh(0, 500)
     kinem['srh_0_to_1000'] = s.get_srh(0, 1000)
     kinem['srh_1_to_3000'] = s.get_srh(1000, 3000)
@@ -292,13 +292,13 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['srh_6_to_9000'] = s.get_srh(6000, 9000)
     kinem['srh_0_to_3000'] = s.get_srh(0, 3000)
     kinem['srh_0_to_6000'] = s.get_srh(0, 6000)
-    kinem['srh_eil'] = s.get_srh(kinem['eil_z'][0], kinem['eil_z'][1])
+    kinem['srh_eil'] = s.get_srh(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
     kinem['srw_0_to_500'] = s.get_srw(0, 500) * units.kts
     kinem['srw_0_to_1000'] = s.get_srw(0, 1000) * units.kts
     kinem['srw_1_to_3000'] = s.get_srw(1000, 3000) * units.kts
     kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
     kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
-    kinem['srw_eil'] = s.get_srw(kinem['eil_z'][0], kinem['eil_z'][1]) * units.kts
+    kinem['srw_eil'] = s.get_srw(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * units.kts
 
     
     #################################################################

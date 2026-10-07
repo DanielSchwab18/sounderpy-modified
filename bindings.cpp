@@ -47,12 +47,18 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_stp", &Sounding::compute_stp)
 
         //height-variant variables
-        .def("get_rh", &Sounding::get_rh)
-        .def("get_w", &Sounding::get_w)
-        .def("get_srw", &Sounding::get_srw)
-        .def("get_srh", &Sounding::get_srh)
-        .def("get_shear", &Sounding::get_shear)
-        .def("get_streamwise_vorticity", &Sounding::get_streamwise_vorticity)
+        .def("get_rh", &Sounding::get_rh,
+            py::arg("min_height"), py::arg("max_height"))
+        .def("get_w", &Sounding::get_w,
+            py::arg("min_height"), py::arg("max_height"))
+        .def("get_srw", &Sounding::get_srw,
+            py::arg("min_height"), py::arg("max_height"))
+        .def("get_srh", &Sounding::get_srh,
+            py::arg("min_height"), py::arg("max_height"))
+        .def("get_shear", &Sounding::get_shear,
+            py::arg("min_height"), py::arg("max_height"))
+        .def("get_streamwise_vorticity", &Sounding::get_streamwise_vorticity,
+            py::arg("min_height"), py::arg("max_height"))
 
         //capes
         .def("get_sbcape", &Sounding::get_sbcape)
@@ -157,8 +163,8 @@ PYBIND11_MODULE(bindings, m) {
 
         //EIL
         .def("get_base_eil_p", &Sounding::get_base_eil_p)
-        .def("get_base_eil_p", &Sounding::get_base_eil_z)
-        .def("get_top_eil_z", &Sounding::get_top_eil_p)
+        .def("get_base_eil_z", &Sounding::get_base_eil_z)
+        .def("get_top_eil_p", &Sounding::get_top_eil_p)
         .def("get_top_eil_z", &Sounding::get_top_eil_z)
         
         //Storm Motions

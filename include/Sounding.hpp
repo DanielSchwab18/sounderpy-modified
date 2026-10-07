@@ -288,7 +288,7 @@ public:
         while(interpolated_height[i] < max_height) {
             i++;
         }
-        if(interpolated_height[i] == min_height) {
+        if(interpolated_height[i] == max_height) {
             high_u = interpolated_wind_u[i];
             high_v = interpolated_wind_v[i];
         } else {
@@ -1528,7 +1528,7 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
 
     calc_right_moving_bunkers_motion_interpolated();
     calc_right_moving_bunkers_motion_peters();
-    calc_mean_wind_interpolated(850, 250);
+    calc_mean_wind_interpolated(85000, 25000);
     calc_storm_relative_winds();
 
     calc_storm_relative_helicity();
@@ -1643,8 +1643,10 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     for (int i = 0; i < size; i++) {
         std::vector<double> cur_profile = calc_parcel_from_level(i);
         std::tuple<double, double, double, double, double, double, double> cur_out = calc_cape_and_cin(cur_profile);
-        if (start_eil == -1 && std::get<0>(cur_out) > 100 && std::get<3>(cur_out) < 250) {
-            start_eil = i;
+        if (std::get<0>(cur_out) > 100 && std::get<3>(cur_out) < 250) {
+            if (start_eil == -1) {
+                start_eil = i;
+            }
         } else if (start_eil != -1 && end_eil == -1) {
             end_eil = i;
             break;
@@ -1950,12 +1952,18 @@ void Sounding::calc_right_moving_bunkers_motion_interpolated() {
     interpolated_lm_bunkers_v = mean_v - bunkers_rm_v_change * 7.5;
 }
 
-void Sounding::calc_mean_wind_interpolated(int lower_bound = 850, int upper_bound = 250) {
+void Sounding::calc_mean_wind_interpolated(int lower_bound = 85000, int upper_bound = 25000) {
     double integral_u = 0.0;
     double integral_v = 0.0;
     double pressureRange = 0.0;
 
     for (int i= 0; i < interpolated_size; i++) {
+        if (interpolated_pressure[i] > lower_bound) {
+            continue;
+        }
+        if (interpolated_pressure[i] < upper_bound) {
+            break;
+        }
         double dp = interpolated_pressure[i] - interpolated_pressure[i - 1];
 
         // Trapezoidal integration of x dp
@@ -1964,9 +1972,8 @@ void Sounding::calc_mean_wind_interpolated(int lower_bound = 850, int upper_boun
 
         pressureRange += dp;
     }
-    interpolated_mean_sm_u = integral_u / interpolated_size;
-    interpolated_mean_sm_v = integral_v / interpolated_size;
-
+    interpolated_mean_sm_u = integral_u / pressureRange;
+    interpolated_mean_sm_v = integral_v / pressureRange;
 }
 
 void Sounding::calc_right_moving_bunkers_motion_peters() {
@@ -2250,46 +2257,46 @@ std::vector<double> Sounding::calc_parcel_from_level(int index) {
 
     while (i < size - 1) {
         i++;
-        double q_sat = (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - 1], pressure[i - 1]);
+        double q_sat = (1 - Q_t_lif[i - 1 - index]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - 1 - index], pressure[i - 1]);
 
-        if (Q_v_lif[i-1]<q_sat) {
-            T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0));
+        if (Q_v_lif[i - 1 - index]<q_sat) {
+            T_lif.push_back(T_lif[i - 1 - index] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1 - index], Q_v_lif[i - 1 - index], temperature[i - 1], specific_humidity[i - 1], 0));
             //std::cout << "i: " << i << " T_lif[i]: " << T_lif[i] << std::endl;
-            Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
-            Q_t_lif.push_back(Q_v_lif[i]);
+            Q_v_lif.push_back(Q_v_lif[i - 1 - index] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1 - index] - specific_humidity[i - 1]));
+            Q_t_lif.push_back(Q_v_lif[i - index]);
             q_sat_prev = q_sat;
-            q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
+            q_sat = (1 - Q_t_lif[i - index]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - index], pressure[i]);
 
-            if (Q_v_lif[i] >= q_sat) {
-                double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
+            if (Q_v_lif[i - index] >= q_sat) {
+                double satrat = (Q_v_lif[i - index] - q_sat_prev) / (q_sat - q_sat_prev);
                 double dz_dry = satrat * (height[i] - height[i - 1]);
                 double dz_wet = (1 - satrat) * (height[i] - height[i - 1]);
 
-                double T_halfstep = T_lif[i - 1] + dz_dry * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0);
-                double Qv_halfstep = Q_v_lif[i - 1] - dz_dry * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]);
-                double Qt_halfstep = Q_v_lif[i];
+                double T_halfstep = T_lif[i - 1 - index] + dz_dry * dry_lapse_rate(T_lif[i - 1 - index], Q_v_lif[i - 1 - index], temperature[i - 1], specific_humidity[i - 1], 0);
+                double Qv_halfstep = Q_v_lif[i - 1 - index] - dz_dry * 0 * (Q_v_lif[i - 1 - index] - specific_humidity[i - 1]);
+                double Qt_halfstep = Q_v_lif[i - index];
                 double p_halfstep = pressure[i - 1] * satrat + pressure[i] * (1 - satrat);
                 double T0_halfstep = temperature[i - 1] * satrat + temperature[i] * (1 - satrat);
                 double Q0_halfstep = specific_humidity[i - 1] * satrat + specific_humidity[i] * (1 - satrat);
 
-                T_lif[i] = T_halfstep + dz_wet * calc_moist_lapse_rate_peters_no_e(T_halfstep, Qv_halfstep, (1 - Qt_halfstep) * compute_mixing_ratio_saturation_linear_combo(T_halfstep, p_halfstep), (1 - Qt_halfstep) * compute_mixing_ratio_saturation_all_ice(T_halfstep, p_halfstep), p_halfstep, T0_halfstep, Q0_halfstep, Qt_halfstep);
+                T_lif[i - index] = T_halfstep + dz_wet * calc_moist_lapse_rate_peters_no_e(T_halfstep, Qv_halfstep, (1 - Qt_halfstep) * compute_mixing_ratio_saturation_linear_combo(T_halfstep, p_halfstep), (1 - Qt_halfstep) * compute_mixing_ratio_saturation_all_ice(T_halfstep, p_halfstep), p_halfstep, T0_halfstep, Q0_halfstep, Qt_halfstep);
 
 
-                Q_t_lif[i] = Q_t_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Qt_halfstep - Q0_halfstep);
-                Q_v_lif[i] = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
+                Q_t_lif[i - index] = Q_t_lif[i - 1 - index] - (height[i] - height[i - 1]) * 0 * (Qt_halfstep - Q0_halfstep);
+                Q_v_lif[i - index] = (1 - Q_t_lif[i - index]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - index], pressure[i]);
 
-                if (Q_t_lif[i] < Q_v_lif[i]) {
-                    Q_v_lif[i] = Q_t_lif[i];
+                if (Q_t_lif[i - index] < Q_v_lif[i - index]) {
+                    Q_v_lif[i - index] = Q_t_lif[i - index];
                 }
             }
         }
         else {
-            T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1], Q_v_lif[i - 1], (1 - Q_t_lif[i - 1]) * calc_saturation_mixing_ratio(T_lif[i - 1], pressure[i - 1]), (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1]));
-            Q_t_lif.push_back(Q_t_lif[i - 1] - (height[i] - height[i - 1]) * (0 * (Q_t_lif[i - 1] - specific_humidity[i - 1])));
-            Q_v_lif.push_back((1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]));
+            T_lif.push_back(T_lif[i - 1 - index] + (height[i] - height[i - 1]) * calc_moist_lapse_rate_peters_no_e(T_lif[i - 1 - index], Q_v_lif[i - 1 - index], (1 - Q_t_lif[i - 1 - index]) * calc_saturation_mixing_ratio(T_lif[i - 1 - index], pressure[i - 1]), (1 - Q_t_lif[i - 1 - index]) * compute_mixing_ratio_saturation_all_ice(T_lif[i - 1 - index], pressure[i - 1]), pressure[i - 1], temperature[i - 1], specific_humidity[i - 1], Q_t_lif[i - 1 - index]));
+            Q_t_lif.push_back(Q_t_lif[i - 1 - index] - (height[i] - height[i - 1]) * (0 * (Q_t_lif[i - 1 - index] - specific_humidity[i - 1])));
+            Q_v_lif.push_back((1 - Q_t_lif[i - index]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - index], pressure[i]));
 
-            if (Q_t_lif[i] < Q_v_lif[i]) {
-                Q_v_lif[i] = Q_t_lif[i];
+            if (Q_t_lif[i - index] < Q_v_lif[i - index]) {
+                Q_v_lif[i - index] = Q_t_lif[i - index];
             }
         }
     }
@@ -2300,7 +2307,7 @@ std::vector<double> Sounding::calc_parcel_from_level(int index) {
 
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
-        T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
+        T_0_lif.push_back(temperature[i + index] * (1.0 + (R_v/R_d - 1) * specific_humidity[i + index]));
     }
     for (int i = 0; i < T_rho_lif.size(); i++) {
         buoyancy_profile.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
