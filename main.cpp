@@ -29,8 +29,7 @@ int main()
     std::string file = "C:/Users/danie/Desktop/Purdue/Research/sounderpy-modified/sounderpy-modified/example";
     
     Sounding s = Sounding(file, true, true, 100);
-    std::cout << "mean_u: " << s.get_mean_wind_sm_u() << std::endl;
-    std::cout << "mean_v: " << s.get_mean_wind_sm_v() << std::endl;
+    Helper_Funcs::printVector(s.get_streamwise_vorticity_vector());
 
     /*
     //EveryLevelBuoyancy e = EveryLevelBuoyancy();

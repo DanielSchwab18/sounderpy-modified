@@ -168,7 +168,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     #################################################################
 
     s = bindings.Sounding("example", True, True, 100) #Def want to rewrite C++ code to take in clean_data in the future
-    general['rh_0_500'] = (s.get_rh(0, 500) + 2)
+    general['rh_0_500'] = s.get_rh(0, 500)
     general['rh_0_1000'] = s.get_rh(0, 1000)
     general['rh_1_3000'] = s.get_rh(1000, 3000)
     general['rh_3_6000'] = s.get_rh(3000, 6000)
@@ -203,7 +203,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
     thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
 
-    thermo['esbT_trace'] = np.ma.asarray(s.get_sb_entrainment_parcel_temp(True))
+    thermo['esbT_trace'] = np.ma.asarray(s.get_mu_entrainment_parcel_temp(True))
     thermo['esbP_trace'] = np.ma.asarray(s.get_pressure(True))
 
     thermo['sb_lcl_p'] = s.get_sb_lcl_p()
@@ -299,6 +299,29 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
     kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
     kinem['srw_eil'] = s.get_srw(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * units.kts
+
+    kinem['srw'] = np.ma.asarray(s.get_srw_vector())
+    kinem['vort'] = np.ma.asarray(s.get_horizontal_vorticity_vector())
+    kinem['swv'] = np.ma.asarray(s.get_streamwise_vorticity_vector())
+    kinem['swv_perc'] = np.ma.asarray(s.get_streamwise_vorticity_percent_vector())
+
+
+    kinem['swv_perc_0_to_500'] = s.get_streamwise_vorticity_percent(0, 500)
+    kinem['swv_perc_0_to_1000'] = s.get_streamwise_vorticity_percent(0, 1000)
+    kinem['swv_perc_1_to_3000'] = s.get_streamwise_vorticity_percent(1000, 3000)
+    kinem['swv_perc_3_to_6000'] = s.get_streamwise_vorticity_percent(3000, 6000)
+    kinem['swv_perc_6_to_9000'] = s.get_streamwise_vorticity_percent(6000, 9000)
+    kinem['swv_perc_eil'] = s.get_streamwise_vorticity_percent(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    kinem['swv_0_to_500'] = s.get_streamwise_vorticity(0, 500)
+    kinem['swv_0_to_1000'] = s.get_streamwise_vorticity(0, 1000)
+    kinem['swv_1_to_3000'] = s.get_streamwise_vorticity(1000, 3000)
+    kinem['swv_3_to_6000'] = s.get_streamwise_vorticity(3000, 6000)
+    kinem['swv_6_to_9000'] = s.get_streamwise_vorticity(6000, 9000)
+    kinem['swv_eil'] = s.get_streamwise_vorticity(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    kinem['eil_stp'] = np.float64('nan')
+    kinem['eil_scp'] = np.float64('nan')
+    kinem['ehi_0_to_1000'] = np.float64('nan')
+    kinem['ehi_0_to_3000'] = np.float64('nan')
 
     
     #################################################################

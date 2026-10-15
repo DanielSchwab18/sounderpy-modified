@@ -59,6 +59,8 @@ PYBIND11_MODULE(bindings, m) {
             py::arg("min_height"), py::arg("max_height"))
         .def("get_streamwise_vorticity", &Sounding::get_streamwise_vorticity,
             py::arg("min_height"), py::arg("max_height"))
+        .def("get_streamwise_vorticity_percent", &Sounding::get_streamwise_vorticity_percent,
+            py::arg("min_height"), py::arg("max_height"))
 
         //capes
         .def("get_sbcape", &Sounding::get_sbcape)
@@ -174,6 +176,12 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_lm_bunkers_v", &Sounding::get_lm_bunkers_v)
         .def("get_mean_wind_sm_u", &Sounding::get_mean_wind_sm_u)
         .def("get_mean_wind_sm_v", &Sounding::get_mean_wind_sm_v)
+
+        //srw and vorticities
+        .def("get_srw_vector", &Sounding::get_srw_vector)
+        .def("get_horizontal_vorticity_vector", &Sounding::get_horizontal_vorticity_vector)
+        .def("get_streamwise_vorticity_vector", &Sounding::get_streamwise_vorticity_vector)
+        .def("get_streamwise_vorticity_percent_vector", &Sounding::get_streamwise_vorticity_percent_vector)
         
 
         .def("get_height", &Sounding::get_height)

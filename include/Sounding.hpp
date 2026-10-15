@@ -264,6 +264,42 @@ public:
         return total_streamwise_vorticity;
     }
 
+    double get_streamwise_vorticity_percent(int min_height, int max_height) {
+        int i = 0;
+        double total_streamwise_vorticity = 0.0;
+        double total_horizontal_vorticity = 0.0;
+        while(interpolated_height[i] < min_height) {
+            i++;
+        }
+
+        if(interpolated_height[i] != min_height) {
+            double height_diff = interpolated_height[i] - min_height;
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            total_streamwise_vorticity = interpolated_storm_relative_streamwise_vorticity[i] - (height_prop * (interpolated_storm_relative_streamwise_vorticity[i] - interpolated_storm_relative_streamwise_vorticity[i-1]));
+            total_horizontal_vorticity = interpolated_horizontal_vorticity[i] - (height_prop * (interpolated_horizontal_vorticity[i] - interpolated_horizontal_vorticity[i-1]));
+        } else {
+            total_streamwise_vorticity += interpolated_storm_relative_streamwise_vorticity[i];
+            total_horizontal_vorticity += interpolated_horizontal_vorticity[i];
+        }
+
+        i++;
+        while(interpolated_height[i] < max_height) {
+            total_streamwise_vorticity += interpolated_storm_relative_streamwise_vorticity[i];
+            total_horizontal_vorticity += interpolated_horizontal_vorticity[i];
+            i++;
+        }
+        if(interpolated_height[i] == max_height) {
+            total_streamwise_vorticity += interpolated_storm_relative_streamwise_vorticity[i];
+            total_horizontal_vorticity += interpolated_horizontal_vorticity[i];
+        } else {
+            double height_diff = max_height - interpolated_height[i-1];
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            total_streamwise_vorticity = interpolated_storm_relative_streamwise_vorticity[i-1] + (height_prop * (interpolated_storm_relative_streamwise_vorticity[i] - interpolated_storm_relative_streamwise_vorticity[i-1]));
+            total_horizontal_vorticity = interpolated_horizontal_vorticity[i] - (height_prop * (interpolated_horizontal_vorticity[i] - interpolated_horizontal_vorticity[i-1]));
+        }
+        return total_streamwise_vorticity / total_horizontal_vorticity;
+    }
+
     //Gets shear between two heights
     double get_shear(int min_height, int max_height) {
         int i = 0;
@@ -1167,6 +1203,21 @@ public:
         return eil_top_z;
     }
 
+    std::vector<double> get_streamwise_vorticity_vector() {
+        return interpolated_storm_relative_streamwise_vorticity;
+    }
+
+    std::vector<double> get_horizontal_vorticity_vector() {
+        return interpolated_horizontal_vorticity;
+    }
+
+    std::vector<double> get_streamwise_vorticity_percent_vector() {
+        return interpolated_streamwise_vorticity_percent;
+    }
+
+    std::vector<double> get_srw_vector() {
+        return interpolated_storm_relative_wind;
+    }
 
 private:
     double L_v = 2501000.0;
@@ -1333,6 +1384,8 @@ private:
 
     std::vector<double> interpolated_storm_relative_helicity;
     std::vector<double> interpolated_storm_relative_streamwise_vorticity;
+    std::vector<double> interpolated_horizontal_vorticity;
+    std::vector<double> interpolated_streamwise_vorticity_percent;
     std::vector<double> storm_relative_helicity;
 
     std::vector<double> mu_parcel_buoyancy;
@@ -1350,6 +1403,7 @@ private:
     std::vector<double> mu_entrainment_temp;
     std::vector<double> ml_entrainment_temp;
     std::vector<double> sb_entrainment_temp;
+
 
     int resolution;
 
@@ -1445,6 +1499,10 @@ private:
     void calc_potential_temperature();
 
     void calc_virtual_temperatures();
+
+    void calc_horizontal_vorticity();
+
+    void calc_streamwise_vorticity_percent();
 };
 
 Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, bool interpolated_cape, int resolution_) {
@@ -1656,6 +1714,9 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     eil_base_z = height[start_eil];
     eil_top_p = pressure[end_eil];
     eil_top_z = height[end_eil];
+
+    calc_horizontal_vorticity();
+    calc_streamwise_vorticity_percent();
 }
 
 Sounding::~Sounding() {
@@ -3448,5 +3509,21 @@ void Sounding::calc_mu_entrainment_buoyancy() {
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
         mu_entrainment_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
+    }
+}
+
+void Sounding::calc_horizontal_vorticity() {
+    for (int i = 1; i < interpolated_height.size(); i++) {
+        double dz = interpolated_height[i] - interpolated_height[i-1];
+        double u = (interpolated_wind_u[i] - interpolated_wind_u[i-1]) / dz;
+        double v = (interpolated_wind_v[i] - interpolated_wind_v[i-1]) / dz;
+        interpolated_horizontal_vorticity.push_back(std::pow(std::pow(u, 2) + std::pow(v, 2), 0.5));
+    }
+}
+
+void Sounding::calc_streamwise_vorticity_percent() {
+    for (int i = 1; i < interpolated_horizontal_vorticity.size(); i++) {
+        double frac = interpolated_storm_relative_streamwise_vorticity[i] / interpolated_horizontal_vorticity[i];
+        interpolated_streamwise_vorticity_percent.push_back(frac * 100.0);
     }
 }
