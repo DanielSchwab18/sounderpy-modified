@@ -1146,6 +1146,10 @@ public:
         return potential_temperature;
     }
 
+    std::vector<double> get_equivalent_potential_temperature() {
+        return equivalent_potential_temperature;
+    }
+
     std::vector<double> get_relative_humidity() {
         return relative_humidity;
     }
@@ -1217,6 +1221,14 @@ public:
 
     std::vector<double> get_srw_vector() {
         return interpolated_storm_relative_wind;
+    }
+
+    std::vector<double> get_wind_u_vector() {
+        return interpolated_wind_u;
+    }
+
+    std::vector<double> get_wind_v_vector() {
+        return interpolated_wind_v;
     }
 
 private:
@@ -1356,6 +1368,7 @@ private:
     std::vector<double> mixing_ratio;
     std::vector<double> specific_humidity;
     std::vector<double> potential_temperature;
+    std::vector<double> equivalent_potential_temperature;
     std::vector<double> virtual_temperature;
 
     std::vector<double> interpolated_saturation_vapor_pressure;
@@ -1373,6 +1386,7 @@ private:
     std::vector<double> interpolated_wind_v;
     std::vector<double> interpolated_specific_humidity;
     std::vector<double> interpolated_potential_temperature;
+    std::vector<double> interpolated_equivalent_potential_temperature;
 
     std::vector<double> storm_relative_wind_u_peters;
     std::vector<double> storm_relative_wind_v_peters;
@@ -1403,6 +1417,14 @@ private:
     std::vector<double> mu_entrainment_temp;
     std::vector<double> ml_entrainment_temp;
     std::vector<double> sb_entrainment_temp;
+
+    std::vector<double> mu_parcel_density_temp;
+    std::vector<double> ml_parcel_density_temp;
+    std::vector<double> sb_parcel_density_temp;
+
+    std::vector<double> mu_entrainment_density_temp;
+    std::vector<double> ml_entrainment_density_temp;
+    std::vector<double> sb_entrainment_density_temp;
 
 
     int resolution;
@@ -1498,6 +1520,8 @@ private:
 
     void calc_potential_temperature();
 
+    void calc_equivalent_potential_temperature();
+
     void calc_virtual_temperatures();
 
     void calc_horizontal_vorticity();
@@ -1584,6 +1608,9 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     calc_interpolated_virtual_temperatures();
     calc_virtual_temperatures();
 
+    calc_potential_temperature();
+    calc_equivalent_potential_temperature();
+
     calc_right_moving_bunkers_motion_interpolated();
     calc_right_moving_bunkers_motion_peters();
     calc_mean_wind_interpolated(85000, 25000);
@@ -1602,6 +1629,8 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
         vapor_pressure = interpolated_vapor_pressure;
         mixing_ratio = interpolated_mixing_ratio;
         specific_humidity = interpolated_specific_humidity;
+        potential_temperature = interpolated_potential_temperature;
+        equivalent_potential_temperature = interpolated_equivalent_potential_temperature;
         size = interpolated_size;
     }
 
@@ -2172,6 +2201,19 @@ void Sounding::calc_potential_temperature() {
     }
 }
 
+void Sounding::calc_equivalent_potential_temperature() {
+    for (int i = 0; i < temperature.size(); i++) {
+        double T_e = temperature[i] + L_v / c_p * mixing_ratio[i];
+        double part_two = std::pow((1000 * 100 / pressure[i]), R_d / c_p);
+        equivalent_potential_temperature.push_back(T_e * part_two);
+    }
+
+    for (int i = 0; i < interpolated_temperature.size(); i++) {
+        double T_e = interpolated_temperature[i] + L_v / c_p * interpolated_mixing_ratio[i];
+        double part_two = std::pow((1000 * 100 / interpolated_pressure[i]), R_d / c_p);
+        interpolated_equivalent_potential_temperature.push_back(T_e * part_two);    }
+}
+
 void Sounding::calc_mixed_parcel_start_values() {
     double ground_pressure = interpolated_pressure[0];
     double pressure_bound = ground_pressure - 5000;
@@ -2297,7 +2339,8 @@ void Sounding::calc_sbparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        sb_parcel_temp.push_back(T_rho_lif[i]);
+        sb_parcel_density_temp.push_back(T_rho_lif[i]);
+        sb_parcel_temp.push_back(T_lif[i]);
     }
     for (int i = 0; i < T_rho_lif.size(); i++) {
         sb_parcel_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
@@ -2754,20 +2797,9 @@ void Sounding::calc_sb_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        sb_entrainment_temp.push_back(T_rho_lif[i]);
+        sb_entrainment_density_temp.push_back(T_rho_lif[i]);
+        sb_entrainment_temp.push_back(T_lif[i]);
     }
-    
-    /*
-    std::cout << "T_lif: " << std::endl;
-    Helper_Funcs::printVector(T_lif);
-    std::cout << "Q_v_lif: " << std::endl;
-    Helper_Funcs::printVector(Q_v_lif);
-    std::cout << "Q_t_lif: " << std::endl;
-    Helper_Funcs::printVector(Q_t_lif);
-    std::cout << "T_rho_lif: " << std::endl;
-    Helper_Funcs::printVector(T_rho_lif);
-    std::cout << "T_0_lif: " << std::endl;
-    Helper_Funcs::printVector(T_0_lif);*/
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
         sb_entrainment_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
@@ -3039,7 +3071,8 @@ void Sounding::calc_mlparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        ml_parcel_temp.push_back(T_rho_lif[i]);
+        ml_parcel_density_temp.push_back(T_rho_lif[i]);
+        ml_parcel_temp.push_back(T_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3233,7 +3266,8 @@ void Sounding::calc_ml_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        ml_entrainment_temp.push_back(T_rho_lif[i]);
+        ml_entrainment_density_temp.push_back(T_rho_lif[i]);
+        ml_entrainment_temp.push_back(T_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3311,7 +3345,8 @@ void Sounding::calc_muparcel_path() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
-        mu_parcel_temp.push_back(T_rho_lif[i]);
+        mu_parcel_density_temp.push_back(T_rho_lif[i]);
+        mu_parcel_temp.push_back(T_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3504,7 +3539,8 @@ void Sounding::calc_mu_entrainment_buoyancy() {
     for (int i = 0; i < T_lif.size(); i++) {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
-        mu_entrainment_temp.push_back(T_rho_lif[i]);
+        mu_entrainment_density_temp.push_back(T_rho_lif[i]);
+        mu_entrainment_temp.push_back(T_lif[i]);
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {

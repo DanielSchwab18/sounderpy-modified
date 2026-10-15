@@ -275,7 +275,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
     kinem['sm_u'] = kinem['sm_rm'][0]
     kinem['sm_v'] = kinem['sm_rm'][1]
-    #kinem['dtm'] = (0.0,  0.0) #TODO: find out what this is, and compute it.
+    #kinem['dtm'] = (0.0,  0.0) #TODO: find out what this is, and compute it. (It is deviant tornado motion)
     #kinem['mcs'] = (0.0,  0.0, 0.0,  0.0)
     kinem['shear_0_to_500'] = s.get_shear(0, 500)
     kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
@@ -305,7 +305,6 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['swv'] = np.ma.asarray(s.get_streamwise_vorticity_vector())
     kinem['swv_perc'] = np.ma.asarray(s.get_streamwise_vorticity_percent_vector())
 
-
     kinem['swv_perc_0_to_500'] = s.get_streamwise_vorticity_percent(0, 500)
     kinem['swv_perc_0_to_1000'] = s.get_streamwise_vorticity_percent(0, 1000)
     kinem['swv_perc_1_to_3000'] = s.get_streamwise_vorticity_percent(1000, 3000)
@@ -322,6 +321,20 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['eil_scp'] = np.float64('nan')
     kinem['ehi_0_to_1000'] = np.float64('nan')
     kinem['ehi_0_to_3000'] = np.float64('nan')
+
+    intrp['rhINTRP'] = s.get_relative_humidity()
+    intrp['tINTRP'] = s.get_temperature()
+    intrp['mrINTRP'] = s.get_mixing_ratio(True)
+    intrp['thetaINTRP'] = s.get_potential_temperature()
+    intrp['thetaeINTRP'] = s.get_equivalent_potential_temperature()
+    #intrp['wbINTRP'] ##TODO: Compute this
+    intrp['pINTRP'] = s.get_pressure(True)
+    intrp['uINTRP'] = s.get_wind_u_vector()
+    intrp['vINTRP'] = s.get_wind_v_vector()
+    intrp['zINTRP'] = s.get_height()
+    #intrp['cape_profileINTRP'] ##TODO: Figure out what these things are
+    #intrp['cin_profileINTRP']
+    #intrp['3cape_profileINTRP']
 
     
     #################################################################

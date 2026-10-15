@@ -161,7 +161,10 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_virtual_temperature", &Sounding::get_virtual_temperature,
             py::arg("needs_celsius") = false)
         .def("get_potential_temperature", &Sounding::get_potential_temperature)
+        .def("get_equivalent_potential_temperature", &Sounding::get_equivalent_potential_temperature)
         .def("get_sfc_pressure", &Sounding::get_sfc_pressure)
+        .def("get_wind_u_vector", &Sounding::get_wind_u_vector)
+        .def("get_wind_v_vector", &Sounding::get_wind_v_vector)
 
         //EIL
         .def("get_base_eil_p", &Sounding::get_base_eil_p)
