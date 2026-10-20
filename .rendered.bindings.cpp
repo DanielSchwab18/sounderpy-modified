@@ -12,10 +12,22 @@ PYBIND11_MODULE(bindings, m) {
     py::class_<Sounding>(m, "Sounding")
         .def(py::init<std::string, bool, bool, int>(),
              py::arg("sounding_file_name"),
-             py::arg("needs_interpolation"),
-             py::arg("interpolate_cape"),
-             py::arg("resolution"))
+             py::arg("needs_interpolation_"),
+             py::arg("interpolate_cape_"),
+             py::arg("resolution_"))
 
+        .def(py::init<std::vector<double>, std::vector<double>, std::vector<double>, std::vector<double>,
+            std::vector<double>, std::vector<double>, std::vector<double>, bool, bool, int>(),
+             py::arg("pressure_"),
+             py::arg("temperature_"),
+             py::arg("dewpoint_"),
+             py::arg("relative_humidity_"),
+             py::arg("wind_u_"),
+             py::arg("wind_v_"),
+             py::arg("height_"),
+             py::arg("needs_interpolation_"),
+             py::arg("interpolate_cape_"),
+             py::arg("resolution_"))
 
         //parcel buoyancy traces
         .def("get_mu_parcel_buoyancy", &Sounding::get_mu_parcel_buoyancy)

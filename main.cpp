@@ -29,8 +29,7 @@ int main()
     std::string file = "C:/Users/danie/Desktop/Purdue/Research/sounderpy-modified/sounderpy-modified/example";
     
     Sounding s = Sounding(file, true, true, 100);
-    Helper_Funcs::printVector(s.get_wind_u_vector());
-    Helper_Funcs::printVector(s.get_wind_v_vector());
+    std::cout << s.get_sbcin() << std::endl;
 
     /*
     //EveryLevelBuoyancy e = EveryLevelBuoyancy();

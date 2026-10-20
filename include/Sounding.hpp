@@ -11,7 +11,14 @@
 
 class Sounding {
 public:
-    Sounding(std::string sounding_file_name, bool needs_interpolation, bool interpolate_cape, int resolution_);
+    Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
+             std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
+             std::vector<double> height_, bool needs_interpolation_, bool interpolate_cape_, int resolution_);
+
+    Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolate_cape_, int resolution_);
+
+    void main_calc();
+
     ~Sounding();
 
 
@@ -1104,8 +1111,6 @@ public:
         double EBWD = std::pow(EBWD_u * EBWD_u + EBWD_v * EBWD_v, 0.5);
         double term2 = EBWD / 20.0;
 
-        std::cout << EBWD << std::endl;
-
         double SRH = get_srh(0, 500);
         double term3 = SRH / 75.0;
 
@@ -1428,6 +1433,8 @@ private:
 
 
     int resolution;
+    bool needs_interpolation;
+    bool interpolated_cape;
 
 
     void calc_lapse_rates();
@@ -1529,13 +1536,37 @@ private:
     void calc_streamwise_vorticity_percent();
 };
 
-Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, bool interpolated_cape, int resolution_) {
+Sounding::Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
+    std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
+    std::vector<double> height_, bool needs_interpolation_, bool interpolated_cape_, int resolution_) {
+    pressure = pressure_;
+    temperature = temperature_;
+    dewpoint = dewpoint_;
+    relative_humidity = relative_humidity_;
+    wind_u = wind_u_;
+    wind_v = wind_v_;
+    height = height_;
+    needs_interpolation = needs_interpolation_;
+    interpolated_cape = interpolated_cape_;
+    resolution = resolution_;
+    for (int i = 0; i < pressure.size(); i++) {
+        pressure[i] = pressure[i] * 100;
+        temperature[i] = temperature[i] + 273.15;
+        dewpoint[i] = dewpoint[i] + 273.15;
+    }
+
+    main_calc();
+}
+
+Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolated_cape_, int resolution_) {
     std::ifstream sounding_file(sounding_file_name);
     std::string curline;
 
     double p, t, td, rh, u, v, h;
 
     resolution = resolution_;
+    needs_interpolation = needs_interpolation_;
+    interpolated_cape = interpolated_cape_;
 
     while (std::getline(sounding_file, curline)) {
         std::istringstream cur(curline);
@@ -1552,7 +1583,10 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation, boo
     }
 
     sounding_file.close();
+    main_calc();
+}
 
+void Sounding::main_calc() {
     //Set lowest height to 0
     for (int i = (int) height.size() - 1; i > 0; i--) {
         height[i] -= height[0];
@@ -2340,7 +2374,7 @@ void Sounding::calc_sbparcel_path() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
         sb_parcel_density_temp.push_back(T_rho_lif[i]);
-        sb_parcel_temp.push_back(T_lif[i]);
+        sb_parcel_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     for (int i = 0; i < T_rho_lif.size(); i++) {
         sb_parcel_buoyancy.push_back(g * (T_rho_lif[i] - T_0_lif[i]) / T_0_lif[i]);
@@ -2470,7 +2504,7 @@ std::tuple<double, double, double, double, double, double, double> Sounding::cal
             
             keepGoing = false;
             for(int j = i-1; j > 1; j--) {
-                if(buoyancy_profile[j] > 0) {
+                if(buoyancy_profile[j] > 0 && height[j] > 1000) {
                     keepGoing = true;
                 }
             }
@@ -2798,7 +2832,7 @@ void Sounding::calc_sb_entrainment_buoyancy() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
         sb_entrainment_density_temp.push_back(T_rho_lif[i]);
-        sb_entrainment_temp.push_back(T_lif[i]);
+        sb_entrainment_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3072,7 +3106,7 @@ void Sounding::calc_mlparcel_path() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
         ml_parcel_density_temp.push_back(T_rho_lif[i]);
-        ml_parcel_temp.push_back(T_lif[i]);
+        ml_parcel_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3267,7 +3301,7 @@ void Sounding::calc_ml_entrainment_buoyancy() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
         ml_entrainment_density_temp.push_back(T_rho_lif[i]);
-        ml_entrainment_temp.push_back(T_lif[i]);
+        ml_entrainment_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3346,7 +3380,7 @@ void Sounding::calc_muparcel_path() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v/R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v/R_d - 1) * specific_humidity[i]));
         mu_parcel_density_temp.push_back(T_rho_lif[i]);
-        mu_parcel_temp.push_back(T_lif[i]);
+        mu_parcel_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
@@ -3540,7 +3574,7 @@ void Sounding::calc_mu_entrainment_buoyancy() {
         T_rho_lif.push_back(T_lif[i] * (1.0 + (R_v / R_d) * Q_v_lif[i] - Q_t_lif[i]));
         T_0_lif.push_back(temperature[i] * (1.0 + (R_v / R_d - 1) * specific_humidity[i]));
         mu_entrainment_density_temp.push_back(T_rho_lif[i]);
-        mu_entrainment_temp.push_back(T_lif[i]);
+        mu_entrainment_temp.push_back(T_lif[i] * (1.0 + (R_v/R_d - 1.0) * Q_v_lif[i]));
     }
     
     for (int i = 0; i < T_rho_lif.size(); i++) {
