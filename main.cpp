@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <chrono>
 
 #include "include/Sounding.hpp"
 #include "include/EveryLevelBuoyancy.hpp"
@@ -25,11 +26,19 @@ fs::path get_long_path(const fs::path& relative_or_absolute_path) {
 
 int main()
 {
-    
+
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::string file = "C:/Users/danie/Desktop/Purdue/Research/sounderpy-modified/sounderpy-modified/example";
     
-    Sounding s = Sounding(file, true, true, 100);
+    Sounding s = Sounding(file, true, true, 100, true);
     std::cout << s.get_sbcin() << std::endl;
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    std::cout << "Execution time: " << duration.count() << " ms" << std::endl;
+
+    return 0;
 
     /*
     //EveryLevelBuoyancy e = EveryLevelBuoyancy();

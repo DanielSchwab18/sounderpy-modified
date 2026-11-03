@@ -13,14 +13,81 @@ class Sounding {
 public:
     Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
              std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
-             std::vector<double> height_, bool needs_interpolation_, bool interpolate_cape_, int resolution_);
+             std::vector<double> height_, bool needs_interpolation_, bool interpolate_cape_, int resolution_, bool needs_multiple_parcels_);
 
-    Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolate_cape_, int resolution_);
+    Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolate_cape_, int resolution_, bool needs_multiple_parcels_);
 
     void main_calc();
 
     ~Sounding();
 
+
+    double get_dtm_u() {
+        int i = 0;
+        double total_srw = 0.0;
+
+        i++;
+        while(interpolated_height[i] < 300) {
+            total_srw += (interpolated_storm_relative_wind_u[i] + interpolated_storm_relative_wind_u[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+            i++;
+        }
+        if(interpolated_height[i] == 300) {
+            total_srw += (interpolated_storm_relative_wind_u[i] + interpolated_storm_relative_wind_u[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+        } else {
+            double height_diff = 300 - interpolated_height[i-1];
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_storm_relative_wind_u[i-1] + (height_prop * (interpolated_storm_relative_wind_u[i] - interpolated_storm_relative_wind_u[i-1]));
+            total_srw += (interpolated_storm_relative_wind_u[i-1] + interim_srw) / 2 * height_diff;
+        }
+        double mw_u_300 = total_srw / 300.0;
+        return (interpolated_rm_bunkers_u + mw_u_300)/2.0;
+    }
+
+    double get_dtm_v() {
+        int i = 0;
+        double total_srw = 0.0;
+
+        i++;
+        while(interpolated_height[i] < 300) {
+            total_srw += (interpolated_storm_relative_wind_v[i] + interpolated_storm_relative_wind_v[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+            i++;
+        }
+        if(interpolated_height[i] == 300) {
+            total_srw += (interpolated_storm_relative_wind_v[i] + interpolated_storm_relative_wind_v[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+        } else {
+            double height_diff = 300 - interpolated_height[i-1];
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_storm_relative_wind_v[i-1] + (height_prop * (interpolated_storm_relative_wind_v[i] - interpolated_storm_relative_wind_v[i-1]));
+            total_srw += (interpolated_storm_relative_wind_v[i-1] + interim_srw) / 2 * height_diff;
+        }
+        double mw_v_300 = total_srw / 300.0;
+        return (interpolated_rm_bunkers_v + mw_v_300)/2.0;
+    }
+
+    std::vector<double> get_corfidi_mcs() {
+        int i850 = 0;
+
+        while (interpolated_pressure[i850] >= 85000) {
+            i850++;
+        }
+        int i300 = i850;
+        while (interpolated_pressure[i300] >= 30000) {
+            i300++;
+        }
+
+        double mean_u_850_300 = get_mean_u(interpolated_height[i850], interpolated_height[i300]);
+        double mean_v_850_300 = get_mean_v(interpolated_height[i850], interpolated_height[i300]);
+
+        double mean_u_sfc_1500 = get_mean_u(0, 1500);
+        double mean_v_sfc_1500 = get_mean_v(0, 1500);
+
+        std::vector<double> output;
+        output.push_back(mean_u_850_300 - mean_u_sfc_1500);
+        output.push_back(mean_v_850_300 - mean_v_sfc_1500);
+        output.push_back(mean_u_850_300 + output[0]);
+        output.push_back(mean_u_850_300 + output[1]);
+        return output;
+    }
 
     std::vector<double> get_mu_parcel_buoyancy() {
         return mu_parcel_buoyancy;
@@ -40,6 +107,18 @@ public:
     }
     std::vector<double> get_sb_entrainment_parcel_buoyancy() {
         return sb_entrainment_buoyancy;
+    }
+
+    std::vector<double> get_cape_vector() {
+        return cape_vector;
+    }
+
+    std::vector<double> get_3cape_vector() {
+        return cape3_vector;
+    }
+
+    std::vector<double> get_cin_vector() {
+        return cin_vector;
     }
 
     std::vector<double> get_mu_parcel_temp(bool needs_celsius = false) {
@@ -208,6 +287,66 @@ public:
             total_srw += (interpolated_storm_relative_wind[i-1] + interim_srw) / 2 * height_diff;
         }
         return total_srw / (max_height - min_height);
+    }
+
+    double get_mean_u(int min_height, int max_height) {
+        int i = 0;
+        double total_u = 0.0;
+        while(interpolated_height[i] < min_height) {
+            i++;
+        }
+
+        if(interpolated_height[i] != min_height) {
+            double height_diff = interpolated_height[i] - min_height;
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_wind_u[i] - (height_prop * (interpolated_wind_u[i] - interpolated_wind_u[i-1]));
+            total_u += (interpolated_wind_u[i] + interim_srw) / 2 * height_diff;
+        }
+
+        i++;
+        while(interpolated_height[i] < max_height) {
+            total_u += (interpolated_wind_u[i] + interpolated_wind_u[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+            i++;
+        }
+        if(interpolated_height[i] == max_height) {
+            total_u += (interpolated_wind_u[i] + interpolated_wind_u[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+        } else {
+            double height_diff = max_height - interpolated_height[i-1];
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_wind_u[i-1] + (height_prop * (interpolated_wind_u[i] - interpolated_wind_u[i-1]));
+            total_u += (interpolated_wind_u[i-1] + interim_srw) / 2 * height_diff;
+        }
+        return total_u / (max_height - min_height);
+    }
+
+    double get_mean_v(int min_height, int max_height) {
+        int i = 0;
+        double total_v = 0.0;
+        while(interpolated_height[i] < min_height) {
+            i++;
+        }
+
+        if(interpolated_height[i] != min_height) {
+            double height_diff = interpolated_height[i] - min_height;
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_wind_v[i] - (height_prop * (interpolated_wind_v[i] - interpolated_wind_v[i-1]));
+            total_v += (interpolated_wind_v[i] + interim_srw) / 2 * height_diff;
+        }
+
+        i++;
+        while(interpolated_height[i] < max_height) {
+            total_v += (interpolated_wind_v[i] + interpolated_wind_v[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+            i++;
+        }
+        if(interpolated_height[i] == max_height) {
+            total_v += (interpolated_wind_v[i] + interpolated_wind_v[i-1]) / 2 * (interpolated_height[i] - interpolated_height[i-1]);
+        } else {
+            double height_diff = max_height - interpolated_height[i-1];
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            double interim_srw = interpolated_wind_v[i-1] + (height_prop * (interpolated_wind_v[i] - interpolated_wind_v[i-1]));
+            total_v += (interpolated_wind_v[i-1] + interim_srw) / 2 * height_diff;
+        }
+        return total_v / (max_height - min_height);
     }
 
     //Gets height averages SRH between min and max height (inclusive)
@@ -1102,6 +1241,26 @@ public:
         return ((int) ((mu_e_lcl / ((double) resolution)) + 0.5)) * resolution;
     }
 
+    //Computes SCP from Thompson 2004
+    double compute_scp() {
+        double EBWD_u = interpolated_wind_u[(sb_el / 2) / resolution] - interpolated_wind_u[sb_lfc / resolution];
+        double EBWD_v = interpolated_wind_v[(sb_el / 2) / resolution] - interpolated_wind_v[sb_lfc / resolution];
+        double EBWD = std::pow(EBWD_u * EBWD_u + EBWD_v * EBWD_v, 0.5);
+
+        double srh = get_srh(sb_lfc, sb_el/2);
+
+        double term1 = mu_cape / 1000.0;
+        double term2 = EBWD / 20.0;
+        if (EBWD < 10) {
+            term2 = 0.0;
+        } else if (EBWD > 20) {
+            term2 = 1.0;
+        }
+        double term3 = srh / 50.0;
+
+        return term1 * term2 * term3;
+    }
+
     //Computes STP500 from CofferTaszarekParker2020 paper
     double compute_stp() {
         double term1 = ml_cape / 1500.0;
@@ -1143,8 +1302,24 @@ public:
         return term1 * term2 * term3 * term4 * term5;
     }
 
+    //Formula from Rasmussen and Blanchard 1998
+    double get_ehi_0_3000() {
+        double numerator = sb_cape * get_srh(0, 3000);
+        return numerator / (double) 160000;
+    }
+
+    //Formula from Rasmussen and Blanchard 1998, but with 0-1km shear
+    double get_ehi_0_1000() {
+        double numerator = sb_cape * get_srh(0, 1000);
+        return numerator / (double) 160000;
+    }
+
     std::vector<double> get_temperature() {
         return temperature;
+    }
+
+    std::vector<double> get_wet_bulb_temperature() {
+        return interpolated_wet_bulb_temperature;
     }
 
     std::vector<double> get_potential_temperature() {
@@ -1381,6 +1556,8 @@ private:
     std::vector<double> interpolated_mixing_ratio;
     std::vector<double> lapse_rate; //lapse_rate[i] = lapse rate from height[i] to height[i+1]
     std::vector<double> interpolated_virtual_temperature;
+    std::vector<double> interpolated_wet_bulb_temperature;
+
 
     std::vector<double> interpolated_height;
     std::vector<double> interpolated_pressure;
@@ -1431,10 +1608,15 @@ private:
     std::vector<double> ml_entrainment_density_temp;
     std::vector<double> sb_entrainment_density_temp;
 
+    std::vector<double> cape_vector;
+    std::vector<double> cape3_vector;
+    std::vector<double> cin_vector;
+
 
     int resolution;
     bool needs_interpolation;
     bool interpolated_cape;
+    bool needs_multiple_parcels;
 
 
     void calc_lapse_rates();
@@ -1531,6 +1713,8 @@ private:
 
     void calc_virtual_temperatures();
 
+    void calc_wet_bulb_temperature();
+
     void calc_horizontal_vorticity();
 
     void calc_streamwise_vorticity_percent();
@@ -1538,7 +1722,7 @@ private:
 
 Sounding::Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
     std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
-    std::vector<double> height_, bool needs_interpolation_, bool interpolated_cape_, int resolution_) {
+    std::vector<double> height_, bool needs_interpolation_, bool interpolated_cape_, int resolution_, bool needs_multiple_parcels_) {
     pressure = pressure_;
     temperature = temperature_;
     dewpoint = dewpoint_;
@@ -1549,6 +1733,7 @@ Sounding::Sounding(std::vector<double> pressure_, std::vector<double> temperatur
     needs_interpolation = needs_interpolation_;
     interpolated_cape = interpolated_cape_;
     resolution = resolution_;
+    needs_multiple_parcels = needs_multiple_parcels_;
     for (int i = 0; i < pressure.size(); i++) {
         pressure[i] = pressure[i] * 100;
         temperature[i] = temperature[i] + 273.15;
@@ -1558,7 +1743,7 @@ Sounding::Sounding(std::vector<double> pressure_, std::vector<double> temperatur
     main_calc();
 }
 
-Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolated_cape_, int resolution_) {
+Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolated_cape_, int resolution_, bool needs_multiple_parcels_) {
     std::ifstream sounding_file(sounding_file_name);
     std::string curline;
 
@@ -1567,6 +1752,7 @@ Sounding::Sounding(std::string sounding_file_name, bool needs_interpolation_, bo
     resolution = resolution_;
     needs_interpolation = needs_interpolation_;
     interpolated_cape = interpolated_cape_;
+    needs_multiple_parcels = needs_multiple_parcels_;
 
     while (std::getline(sounding_file, curline)) {
         std::istringstream cur(curline);
@@ -1641,6 +1827,7 @@ void Sounding::main_calc() {
     calc_interpolated_mixing_ratios();
     calc_interpolated_virtual_temperatures();
     calc_virtual_temperatures();
+    calc_wet_bulb_temperature();
 
     calc_potential_temperature();
     calc_equivalent_potential_temperature();
@@ -1653,6 +1840,16 @@ void Sounding::main_calc() {
     calc_storm_relative_helicity();
 
     calc_storm_relative_streamwise_vorticity();
+
+    if (needs_multiple_parcels) {
+        for (int i = 0; i < height.size(); i++) {
+            std::vector<double> cur = calc_parcel_from_level(i);
+            std::tuple<double, double, double, double, double, double, double> cur_out = calc_cape_and_cin(cur);
+            cape_vector.push_back(std::get<0>(cur_out));
+            cape3_vector.push_back(std::get<1>(cur_out));
+            cin_vector.push_back(std::get<3>(cur_out));
+        }
+    }
 
     if (interpolated_cape) {
         pressure = interpolated_pressure;
@@ -1850,6 +2047,20 @@ void Sounding::calc_virtual_temperatures() {
         double q = mixing_ratio[i] / (1 + mixing_ratio[i]);
         double correction_factor = 1 + 0.608013937283 * q;
         virtual_temperature.push_back(correction_factor * temperature[i]);
+    }
+}
+
+void Sounding::calc_wet_bulb_temperature() {
+    for (int i = 0; i < interpolated_height.size(); i++) {
+        double T = interpolated_temperature[i] - 273.15;
+        double rh = interpolated_relative_humidity[i];
+
+        double term1 = T * std::atan(0.151977 * std::pow(rh + 8.313659, 0.5));
+        double term2 = std::atan(T+rh);
+        double term3 = std::atan(rh - 1.676331);
+        double term4 = 0.00391838 * std::pow(rh, 1.5) * std::atan(0.023101 * rh);
+
+        interpolated_wet_bulb_temperature.push_back(term1 + term2 - term3 + term4 - 4.686035);
     }
 }
 

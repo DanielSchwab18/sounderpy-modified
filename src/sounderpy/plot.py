@@ -167,7 +167,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     ### OVERWRITE SOUNDERPY VALUES WITH MY VALUES
     #################################################################
 
-    s = bindings.Sounding("example", True, True, 100) #Def want to rewrite C++ code to take in clean_data in the future
+    s = bindings.Sounding(p.magnitude, T.magnitude, Td.magnitude, clean_data['RH'], u.magnitude, v.magnitude, z.magnitude, True, True, 100, True) 
     general['rh_0_500'] = s.get_rh(0, 500)
     general['rh_0_1000'] = s.get_rh(0, 1000)
     general['rh_1_3000'] = s.get_rh(1000, 3000)
@@ -252,9 +252,9 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     thermo['dcin'] = np.float64('nan')
     thermo['dparcel_p'] = None
     thermo['dparcel_T'] = None
-    thermo['cape_profile'] = None
-    thermo['cin_profile'] = None
-    thermo['3cape_profile'] = None
+    thermo['cape_profile'] = np.ma.asarray(s.get_cape_vector())
+    thermo['cin_profile'] = np.ma.asarray(s.get_cin_vector())
+    thermo['3cape_profile'] = np.ma.asarray(s.get_3cape_vector())
 
     thermo['pbl_top'] = np.float64('nan')
     thermo['dgz'] = None
@@ -275,8 +275,8 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
     kinem['sm_u'] = kinem['sm_rm'][0]
     kinem['sm_v'] = kinem['sm_rm'][1]
-    #kinem['dtm'] = (0.0,  0.0) #TODO: find out what this is, and compute it. (It is deviant tornado motion)
-    #kinem['mcs'] = (0.0,  0.0, 0.0,  0.0)
+    kinem['dtm'] = (s.get_dtm_u(),  s.get_dtm_v())
+    kinem['mcs'] = np.ma.asarray(s.get_mcs())    
     kinem['shear_0_to_500'] = s.get_shear(0, 500)
     kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
     kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
@@ -327,15 +327,28 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     intrp['mrINTRP'] = s.get_mixing_ratio(True)
     intrp['thetaINTRP'] = s.get_potential_temperature()
     intrp['thetaeINTRP'] = s.get_equivalent_potential_temperature()
-    #intrp['wbINTRP'] ##TODO: Compute this
+    intrp['wbINTRP'] = s.get_wet_bulb_temperature()
     intrp['pINTRP'] = s.get_pressure(True)
     intrp['uINTRP'] = s.get_wind_u_vector()
     intrp['vINTRP'] = s.get_wind_v_vector()
     intrp['zINTRP'] = s.get_height()
-    #intrp['cape_profileINTRP'] ##TODO: Figure out what these things are
-    #intrp['cin_profileINTRP']
-    #intrp['3cape_profileINTRP']
 
+    #This whole section is really ugly, but computing like 150+ parcel traces seems needless expensive.
+    def interpolate(var,hgts,step):
+        levels=np.arange(0,np.max(hgts),step)
+        varinterp=np.zeros(len(levels))
+        for i in range(0,len(levels)):
+            try:
+                lower=np.where(hgts-levels[i]<=0,hgts-levels[i],-np.inf).argmax()
+                varinterp[i]=(((var[lower+1]-var[lower])/(hgts[lower+1]-hgts[lower]))*(levels[i]-hgts[lower])+var[lower])
+            except IndexError:
+                # Handle the case where the index is out of bounds
+                varinterp[i] = np.nan 
+        return varinterp 
+
+    intrp['cape_profileINTRP'] = interpolate(thermo['cape_profile'], intrp['zINTRP'], 100.0)
+    intrp['cin_profileINTRP'] = interpolate(thermo['cin_profile'], intrp['zINTRP'], 100.0)
+    intrp['3cape_profileINTRP'] = interpolate(thermo['3cape_profile'], intrp['zINTRP'], 100.0)
     
     #################################################################
     ### DECLARE PLOT TITLES FROM CLEAN_DATA ###
@@ -1464,7 +1477,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
         plt.xticks(rotation=45)
 
         # PLOT CIN VS HGT
-        inflow_ax.fill_betweenx(intrp['zINTRP'], intrp['cin_profileINTRP'],
+        inflow_ax.fill_betweenx(intrp['zINTRP'][:-1], intrp['cin_profileINTRP'],
                                 color=cin_color, linewidth=0, alpha=0.5, clip_on=True)
 
         if ma.is_masked(kinem['eil_z'][0]) == False:
@@ -1497,7 +1510,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
         inflow_ax2.grid(True, axis='y')
 
         # PLOT 3CAPE VS HGT
-        inflow_ax2.fill_betweenx(intrp['zINTRP'], intrp['cape_profileINTRP'],
+        inflow_ax2.fill_betweenx(intrp['zINTRP'][:-1], intrp['cape_profileINTRP'],
                                  color=cape_color, linewidth=0, alpha=0.8, clip_on=True)
         #############################################################
 

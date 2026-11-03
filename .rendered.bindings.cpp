@@ -10,14 +10,15 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(bindings, m) {
     py::class_<Sounding>(m, "Sounding")
-        .def(py::init<std::string, bool, bool, int>(),
+        .def(py::init<std::string, bool, bool, int, bool>(),
              py::arg("sounding_file_name"),
              py::arg("needs_interpolation_"),
              py::arg("interpolate_cape_"),
-             py::arg("resolution_"))
+             py::arg("resolution_"),
+             py::arg("needs_multiple_parcels_"))
 
         .def(py::init<std::vector<double>, std::vector<double>, std::vector<double>, std::vector<double>,
-            std::vector<double>, std::vector<double>, std::vector<double>, bool, bool, int>(),
+            std::vector<double>, std::vector<double>, std::vector<double>, bool, bool, int, bool>(),
              py::arg("pressure_"),
              py::arg("temperature_"),
              py::arg("dewpoint_"),
@@ -27,7 +28,8 @@ PYBIND11_MODULE(bindings, m) {
              py::arg("height_"),
              py::arg("needs_interpolation_"),
              py::arg("interpolate_cape_"),
-             py::arg("resolution_"))
+             py::arg("resolution_"),
+             py::arg("needs_multiple_parcels_"))
 
         //parcel buoyancy traces
         .def("get_mu_parcel_buoyancy", &Sounding::get_mu_parcel_buoyancy)
@@ -53,6 +55,9 @@ PYBIND11_MODULE(bindings, m) {
 
         //stp
         .def("get_stp", &Sounding::compute_stp)
+        .def("get_scp", &Sounding::compute_scp)
+        .def("get_ehi_0_1000", &Sounding::get_ehi_0_1000)
+        .def("get_ehi_0_3000", &Sounding::get_ehi_0_3000)
 
         //height-variant variables
         .def("get_rh", &Sounding::get_rh,
@@ -110,6 +115,11 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_mu_B_to_height", &Sounding::get_mu_B_to_height,
             py::arg("height_limit"))
 
+        //CAPE/CIN/3CAPE vectors
+        .def("get_cape_vector", &Sounding::get_cape_vector)
+        .def("get_3cape_vector", &Sounding::get_3cape_vector)
+        .def("get_cin_vector", &Sounding::get_cin_vector)
+
         //lfc heights and pressures
         .def("get_sb_lfc", &Sounding::get_sb_lfc)
         .def("get_sb_lfc_p", &Sounding::get_sb_lfc_p)
@@ -161,6 +171,7 @@ PYBIND11_MODULE(bindings, m) {
 
         //Temps and stuff
         .def("get_temperature", &Sounding::get_temperature)
+        .def("get_wet_bulb_temperature", &Sounding::get_wet_bulb_temperature)
         .def("get_mixing_ratio", &Sounding::get_mixing_ratio,
             py::arg("grams_per_kilogram") = false)
         .def("get_specific_humidity", &Sounding::get_specific_humidity,
@@ -187,6 +198,9 @@ PYBIND11_MODULE(bindings, m) {
         .def("get_lm_bunkers_v", &Sounding::get_lm_bunkers_v)
         .def("get_mean_wind_sm_u", &Sounding::get_mean_wind_sm_u)
         .def("get_mean_wind_sm_v", &Sounding::get_mean_wind_sm_v)
+        .def("get_mcs", &Sounding::get_corfidi_mcs)
+        .def("get_dtm_u", &Sounding::get_dtm_u)
+        .def("get_dtm_v", &Sounding::get_dtm_v)
 
         //srw and vorticities
         .def("get_srw_vector", &Sounding::get_srw_vector)

@@ -73,7 +73,7 @@ public:
                 std::vector<std::string> result = Helper_Funcs::split(filename, '_');
 
 
-                Sounding s = Sounding(cur_file, false, false, 100);
+                Sounding s = Sounding(cur_file, false, false, 100, false);
 
                 outfile << result[0].substr(2, 2) << "," << result[0].substr(4, 2) << "," << result[0].substr(6, 2) << "," << result[0].substr(8, 2) << ",";
                 outfile << result[1] << "," << result[2] << "," << result[3] << "," << result[4] << "," << result[5] << ",";
