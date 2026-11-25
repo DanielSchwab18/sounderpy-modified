@@ -167,188 +167,188 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
     ### OVERWRITE SOUNDERPY VALUES WITH MY VALUES
     #################################################################
 
-    s = bindings.Sounding(p.magnitude, T.magnitude, Td.magnitude, clean_data['RH'], u.magnitude, v.magnitude, z.magnitude, True, True, 100, True) 
-    general['rh_0_500'] = s.get_rh(0, 500)
-    general['rh_0_1000'] = s.get_rh(0, 1000)
-    general['rh_1_3000'] = s.get_rh(1000, 3000)
-    general['rh_3_6000'] = s.get_rh(3000, 6000)
-    general['rh_6_9000'] = s.get_rh(6000, 9000)
+    # s = bindings.Sounding(p.magnitude, T.magnitude, Td.magnitude, clean_data['RH'], u.magnitude, v.magnitude, z.magnitude, True, True, 100, True) 
+    # general['rh_0_500'] = s.get_rh(0, 500)
+    # general['rh_0_1000'] = s.get_rh(0, 1000)
+    # general['rh_1_3000'] = s.get_rh(1000, 3000)
+    # general['rh_3_6000'] = s.get_rh(3000, 6000)
+    # general['rh_6_9000'] = s.get_rh(6000, 9000)
 
-    general['w_0_500'] = s.get_w(0, 500) * 1000.0
-    general['w_0_1000'] = s.get_w(0, 1000) * 1000.0
-    general['w_1_3000'] = s.get_w(1000, 3000) * 1000.0
-    general['w_3_6000'] = s.get_w(3000, 6000) * 1000.0
-    general['w_6_9000'] = s.get_w(6000, 9000) * 1000.0 
+    # general['w_0_500'] = s.get_w(0, 500) * 1000.0
+    # general['w_0_1000'] = s.get_w(0, 1000) * 1000.0
+    # general['w_1_3000'] = s.get_w(1000, 3000) * 1000.0
+    # general['w_3_6000'] = s.get_w(3000, 6000) * 1000.0
+    # general['w_6_9000'] = s.get_w(6000, 9000) * 1000.0 
 
-    general['wb_frz_pt_z'] = np.float64('nan') * units.m
-    general['wb_frz_pt_p'] = np.float64('nan') * units.m
-    general['frz_pt_z'] = np.float64('nan') * units.m
-    general['frz_pt_p'] = np.float64('nan') * units.m
-    general['pwat'] = np.float64('nan')
+    # general['wb_frz_pt_z'] = np.float64('nan') * units.m
+    # general['wb_frz_pt_p'] = np.float64('nan') * units.m
+    # general['frz_pt_z'] = np.float64('nan') * units.m
+    # general['frz_pt_p'] = np.float64('nan') * units.m
+    # general['pwat'] = np.float64('nan')
 
-    general['sfc_pressure'] = s.get_sfc_pressure() * units.hPa
-    general['rel_humidity'] = s.get_relative_humidity()
-    general['spec_humidity'] = s.get_specific_humidity(True) * units.g/units.kg
-    general['mix_ratio'] = s.get_mixing_ratio(True) * units.g/units.kg
-    general['virt_temp'] = s.get_virtual_temperature(True) * units.degC
+    # general['sfc_pressure'] = s.get_sfc_pressure() * units.hPa
+    # general['rel_humidity'] = s.get_relative_humidity()
+    # general['spec_humidity'] = s.get_specific_humidity(True) * units.g/units.kg
+    # general['mix_ratio'] = s.get_mixing_ratio(True) * units.g/units.kg
+    # general['virt_temp'] = s.get_virtual_temperature(True) * units.degC
 
-    thermo['sbT_trace'] = np.ma.asarray(s.get_sb_parcel_temp(True))
-    thermo['sbP_trace'] = np.ma.asarray(s.get_pressure(True))
-    thermo['sbZ_trace'] = np.ma.asarray(s.get_height())
+    # thermo['sbT_trace'] = np.ma.asarray(s.get_sb_parcel_temp(True))
+    # thermo['sbP_trace'] = np.ma.asarray(s.get_pressure(True))
+    # thermo['sbZ_trace'] = np.ma.asarray(s.get_height())
     
-    thermo['muT_trace'] = np.ma.asarray(s.get_mu_parcel_temp(True))
-    thermo['muP_trace'] = np.ma.asarray(s.get_pressure(True))
-    thermo['muZ_trace'] = np.ma.asarray(s.get_height())
+    # thermo['muT_trace'] = np.ma.asarray(s.get_mu_parcel_temp(True))
+    # thermo['muP_trace'] = np.ma.asarray(s.get_pressure(True))
+    # thermo['muZ_trace'] = np.ma.asarray(s.get_height())
     
-    thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
-    thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
+    # thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
+    # thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
 
-    thermo['esbT_trace'] = np.ma.asarray(s.get_mu_entrainment_parcel_temp(True))
-    thermo['esbP_trace'] = np.ma.asarray(s.get_pressure(True))
+    # thermo['esbT_trace'] = np.ma.asarray(s.get_mu_entrainment_parcel_temp(True))
+    # thermo['esbP_trace'] = np.ma.asarray(s.get_pressure(True))
 
-    thermo['sb_lcl_p'] = s.get_sb_lcl_p()
-    thermo['sb_lcl_z'] = s.get_sb_lcl()
-    thermo['sb_lfc_p'] = s.get_sb_lfc()
-    thermo['sb_lfc_z'] = s.get_sb_lfc()
-    thermo['sb_el_p'] = s.get_sb_el_p()
-    thermo['sb_el_z'] = s.get_sb_el()
-    thermo['sb_el_T'] = s.get_sb_el_t()
-    thermo['sb_mpl_p'] = np.float64('nan')
-    thermo['sbcape'] = s.get_sbcape()
-    thermo['sbcin'] = s.get_sbcin()
-    thermo['sb3cape'] = s.get_sb3cape()
-    thermo['sb6cape'] = s.get_sb6cape()
+    # thermo['sb_lcl_p'] = s.get_sb_lcl_p()
+    # thermo['sb_lcl_z'] = s.get_sb_lcl()
+    # thermo['sb_lfc_p'] = s.get_sb_lfc()
+    # thermo['sb_lfc_z'] = s.get_sb_lfc()
+    # thermo['sb_el_p'] = s.get_sb_el_p()
+    # thermo['sb_el_z'] = s.get_sb_el()
+    # thermo['sb_el_T'] = s.get_sb_el_t()
+    # thermo['sb_mpl_p'] = np.float64('nan')
+    # thermo['sbcape'] = s.get_sbcape()
+    # thermo['sbcin'] = s.get_sbcin()
+    # thermo['sb3cape'] = s.get_sb3cape()
+    # thermo['sb6cape'] = s.get_sb6cape()
 
-    thermo['ml_lcl_p'] = s.get_ml_lcl_p()
-    thermo['ml_lcl_z'] = s.get_ml_lcl()
-    thermo['ml_lfc_p'] = s.get_ml_lfc()
-    thermo['ml_lfc_z'] = s.get_ml_lfc()
-    thermo['ml_el_p'] = s.get_ml_el_p()
-    thermo['ml_el_z'] = s.get_ml_el()
-    thermo['ml_el_T'] = s.get_ml_el_t()
-    thermo['ml_mpl_p'] = np.float64('nan')
-    thermo['mlcape'] = s.get_mlcape()
-    thermo['mlcin'] = s.get_mlcin()
-    thermo['ml3cape'] = s.get_ml3cape()
-    thermo['ml6cape'] = s.get_ml6cape()
+    # thermo['ml_lcl_p'] = s.get_ml_lcl_p()
+    # thermo['ml_lcl_z'] = s.get_ml_lcl()
+    # thermo['ml_lfc_p'] = s.get_ml_lfc()
+    # thermo['ml_lfc_z'] = s.get_ml_lfc()
+    # thermo['ml_el_p'] = s.get_ml_el_p()
+    # thermo['ml_el_z'] = s.get_ml_el()
+    # thermo['ml_el_T'] = s.get_ml_el_t()
+    # thermo['ml_mpl_p'] = np.float64('nan')
+    # thermo['mlcape'] = s.get_mlcape()
+    # thermo['mlcin'] = s.get_mlcin()
+    # thermo['ml3cape'] = s.get_ml3cape()
+    # thermo['ml6cape'] = s.get_ml6cape()
 
-    thermo['mu_lcl_p'] = s.get_mu_lcl_p()
-    thermo['mu_lcl_z'] = s.get_mu_lcl()
-    thermo['mu_lfc_p'] = s.get_mu_lfc()
-    thermo['mu_lfc_z'] = s.get_mu_lfc()
-    thermo['mu_el_p'] = s.get_mu_el_p()
-    thermo['mu_el_z'] = s.get_mu_el()
-    thermo['mu_el_T'] = s.get_mu_el_t()
-    thermo['mu_mpl_p'] = np.float64('nan')
-    thermo['mucape'] = s.get_mucape()
-    thermo['mucin'] = s.get_mucin()
-    thermo['mu3cape'] = s.get_mu3cape()
-    thermo['mu6cape'] = s.get_mu6cape()
+    # thermo['mu_lcl_p'] = s.get_mu_lcl_p()
+    # thermo['mu_lcl_z'] = s.get_mu_lcl()
+    # thermo['mu_lfc_p'] = s.get_mu_lfc()
+    # thermo['mu_lfc_z'] = s.get_mu_lfc()
+    # thermo['mu_el_p'] = s.get_mu_el_p()
+    # thermo['mu_el_z'] = s.get_mu_el()
+    # thermo['mu_el_T'] = s.get_mu_el_t()
+    # thermo['mu_mpl_p'] = np.float64('nan')
+    # thermo['mucape'] = s.get_mucape()
+    # thermo['mucin'] = s.get_mucin()
+    # thermo['mu3cape'] = s.get_mu3cape()
+    # thermo['mu6cape'] = s.get_mu6cape()
 
-    thermo['mu_ncape'] = round(thermo['mucape'] / (thermo['mu_el_z'] - thermo['mu_lfc_z']),3) # Original sounderpy rounds to 1 digit
-    thermo['sb_ncape'] = round(thermo['sbcape'] / (thermo['sb_el_z'] - thermo['sb_lfc_z']),3)
-    thermo['ml_ncape'] = round(thermo['mlcape'] / (thermo['ml_el_z'] - thermo['ml_lfc_z']),3) 
-    thermo['dcape'] = np.float64('nan')
-    thermo['dcin'] = np.float64('nan')
-    thermo['dparcel_p'] = None
-    thermo['dparcel_T'] = None
-    thermo['cape_profile'] = np.ma.asarray(s.get_cape_vector())
-    thermo['cin_profile'] = np.ma.asarray(s.get_cin_vector())
-    thermo['3cape_profile'] = np.ma.asarray(s.get_3cape_vector())
+    # thermo['mu_ncape'] = round(thermo['mucape'] / (thermo['mu_el_z'] - thermo['mu_lfc_z']),3) # Original sounderpy rounds to 1 digit
+    # thermo['sb_ncape'] = round(thermo['sbcape'] / (thermo['sb_el_z'] - thermo['sb_lfc_z']),3)
+    # thermo['ml_ncape'] = round(thermo['mlcape'] / (thermo['ml_el_z'] - thermo['ml_lfc_z']),3) 
+    # thermo['dcape'] = np.float64('nan')
+    # thermo['dcin'] = np.float64('nan')
+    # thermo['dparcel_p'] = None
+    # thermo['dparcel_T'] = None
+    # thermo['cape_profile'] = np.ma.asarray(s.get_cape_vector())
+    # thermo['cin_profile'] = np.ma.asarray(s.get_cin_vector())
+    # thermo['3cape_profile'] = np.ma.asarray(s.get_3cape_vector())
 
-    thermo['pbl_top'] = np.float64('nan')
-    thermo['dgz'] = None
-    thermo['hgz'] = None
-    thermo['lr_36km'] = np.float64('nan')
-    thermo['lr_03km'] = np.float64('nan')
-    thermo['lr_max'] = None
-    thermo['temp_adv'] = None
+    # thermo['pbl_top'] = np.float64('nan')
+    # thermo['dgz'] = None
+    # thermo['hgz'] = None
+    # thermo['lr_36km'] = np.float64('nan')
+    # thermo['lr_03km'] = np.float64('nan')
+    # thermo['lr_max'] = None
+    # thermo['temp_adv'] = None
 
-    thermo['sb_ecape'] = s.get_sbecape()
-    thermo['ml_ecape'] = s.get_mlecape()
-    thermo['mu_ecape'] = s.get_muecape()
+    # thermo['sb_ecape'] = s.get_sbecape()
+    # thermo['ml_ecape'] = s.get_mlecape()
+    # thermo['mu_ecape'] = s.get_muecape()
 
-    kinem['eil'] = (s.get_base_eil_p(), s.get_top_eil_p()) 
-    kinem['eil_z'] = (s.get_base_eil_z(), s.get_top_eil_z())
-    kinem['sm_rm'] = (s.get_rm_bunkers_u(), s.get_rm_bunkers_v())
-    kinem['sm_lm'] = (s.get_lm_bunkers_u(), s.get_lm_bunkers_v())
-    kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
-    kinem['sm_u'] = kinem['sm_rm'][0]
-    kinem['sm_v'] = kinem['sm_rm'][1]
-    kinem['dtm'] = (s.get_dtm_u(),  s.get_dtm_v())
-    kinem['mcs'] = np.ma.asarray(s.get_mcs())    
-    kinem['shear_0_to_500'] = s.get_shear(0, 500)
-    kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
-    kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
-    kinem['shear_3_to_6000'] = s.get_shear(3000, 6000)
-    kinem['shear_6_to_9000'] = s.get_shear(6000, 9000)
-    kinem['shear_0_to_3000'] = s.get_shear(0, 3000)
-    kinem['shear_0_to_6000'] = s.get_shear(0, 6000)
-    kinem['shear_eil'] = s.get_shear(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
-    kinem['srh_0_to_500'] = s.get_srh(0, 500)
-    kinem['srh_0_to_1000'] = s.get_srh(0, 1000)
-    kinem['srh_1_to_3000'] = s.get_srh(1000, 3000)
-    kinem['srh_3_to_6000'] = s.get_srh(3000, 6000)
-    kinem['srh_6_to_9000'] = s.get_srh(6000, 9000)
-    kinem['srh_0_to_3000'] = s.get_srh(0, 3000)
-    kinem['srh_0_to_6000'] = s.get_srh(0, 6000)
-    kinem['srh_eil'] = s.get_srh(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
-    kinem['srw_0_to_500'] = s.get_srw(0, 500) * units.kts
-    kinem['srw_0_to_1000'] = s.get_srw(0, 1000) * units.kts
-    kinem['srw_1_to_3000'] = s.get_srw(1000, 3000) * units.kts
-    kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
-    kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
-    kinem['srw_eil'] = s.get_srw(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * units.kts
+    # kinem['eil'] = (s.get_base_eil_p(), s.get_top_eil_p()) 
+    # kinem['eil_z'] = (s.get_base_eil_z(), s.get_top_eil_z())
+    # kinem['sm_rm'] = (s.get_rm_bunkers_u(), s.get_rm_bunkers_v())
+    # kinem['sm_lm'] = (s.get_lm_bunkers_u(), s.get_lm_bunkers_v())
+    # kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
+    # kinem['sm_u'] = kinem['sm_rm'][0]
+    # kinem['sm_v'] = kinem['sm_rm'][1]
+    # kinem['dtm'] = (s.get_dtm_u(),  s.get_dtm_v())
+    # kinem['mcs'] = np.ma.asarray(s.get_mcs())    
+    # kinem['shear_0_to_500'] = s.get_shear(0, 500)
+    # kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
+    # kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
+    # kinem['shear_3_to_6000'] = s.get_shear(3000, 6000)
+    # kinem['shear_6_to_9000'] = s.get_shear(6000, 9000)
+    # kinem['shear_0_to_3000'] = s.get_shear(0, 3000)
+    # kinem['shear_0_to_6000'] = s.get_shear(0, 6000)
+    # kinem['shear_eil'] = s.get_shear(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    # kinem['srh_0_to_500'] = s.get_srh(0, 500)
+    # kinem['srh_0_to_1000'] = s.get_srh(0, 1000)
+    # kinem['srh_1_to_3000'] = s.get_srh(1000, 3000)
+    # kinem['srh_3_to_6000'] = s.get_srh(3000, 6000)
+    # kinem['srh_6_to_9000'] = s.get_srh(6000, 9000)
+    # kinem['srh_0_to_3000'] = s.get_srh(0, 3000)
+    # kinem['srh_0_to_6000'] = s.get_srh(0, 6000)
+    # kinem['srh_eil'] = s.get_srh(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    # kinem['srw_0_to_500'] = s.get_srw(0, 500) * units.kts
+    # kinem['srw_0_to_1000'] = s.get_srw(0, 1000) * units.kts
+    # kinem['srw_1_to_3000'] = s.get_srw(1000, 3000) * units.kts
+    # kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
+    # kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
+    # kinem['srw_eil'] = s.get_srw(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * units.kts
 
-    kinem['srw'] = np.ma.asarray(s.get_srw_vector())
-    kinem['vort'] = np.ma.asarray(s.get_horizontal_vorticity_vector())
-    kinem['swv'] = np.ma.asarray(s.get_streamwise_vorticity_vector())
-    kinem['swv_perc'] = np.ma.asarray(s.get_streamwise_vorticity_percent_vector())
+    # kinem['srw'] = np.ma.asarray(s.get_srw_vector())
+    # kinem['vort'] = np.ma.asarray(s.get_horizontal_vorticity_vector())
+    # kinem['swv'] = np.ma.asarray(s.get_streamwise_vorticity_vector())
+    # kinem['swv_perc'] = np.ma.asarray(s.get_streamwise_vorticity_percent_vector())
 
-    kinem['swv_perc_0_to_500'] = s.get_streamwise_vorticity_percent(0, 500)
-    kinem['swv_perc_0_to_1000'] = s.get_streamwise_vorticity_percent(0, 1000)
-    kinem['swv_perc_1_to_3000'] = s.get_streamwise_vorticity_percent(1000, 3000)
-    kinem['swv_perc_3_to_6000'] = s.get_streamwise_vorticity_percent(3000, 6000)
-    kinem['swv_perc_6_to_9000'] = s.get_streamwise_vorticity_percent(6000, 9000)
-    kinem['swv_perc_eil'] = s.get_streamwise_vorticity_percent(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
-    kinem['swv_0_to_500'] = s.get_streamwise_vorticity(0, 500)
-    kinem['swv_0_to_1000'] = s.get_streamwise_vorticity(0, 1000)
-    kinem['swv_1_to_3000'] = s.get_streamwise_vorticity(1000, 3000)
-    kinem['swv_3_to_6000'] = s.get_streamwise_vorticity(3000, 6000)
-    kinem['swv_6_to_9000'] = s.get_streamwise_vorticity(6000, 9000)
-    kinem['swv_eil'] = s.get_streamwise_vorticity(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
-    kinem['eil_stp'] = np.float64('nan')
-    kinem['eil_scp'] = np.float64('nan')
-    kinem['ehi_0_to_1000'] = np.float64('nan')
-    kinem['ehi_0_to_3000'] = np.float64('nan')
+    # kinem['swv_perc_0_to_500'] = s.get_streamwise_vorticity_percent(0, 500)
+    # kinem['swv_perc_0_to_1000'] = s.get_streamwise_vorticity_percent(0, 1000)
+    # kinem['swv_perc_1_to_3000'] = s.get_streamwise_vorticity_percent(1000, 3000)
+    # kinem['swv_perc_3_to_6000'] = s.get_streamwise_vorticity_percent(3000, 6000)
+    # kinem['swv_perc_6_to_9000'] = s.get_streamwise_vorticity_percent(6000, 9000)
+    # kinem['swv_perc_eil'] = s.get_streamwise_vorticity_percent(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    # kinem['swv_0_to_500'] = s.get_streamwise_vorticity(0, 500)
+    # kinem['swv_0_to_1000'] = s.get_streamwise_vorticity(0, 1000)
+    # kinem['swv_1_to_3000'] = s.get_streamwise_vorticity(1000, 3000)
+    # kinem['swv_3_to_6000'] = s.get_streamwise_vorticity(3000, 6000)
+    # kinem['swv_6_to_9000'] = s.get_streamwise_vorticity(6000, 9000)
+    # kinem['swv_eil'] = s.get_streamwise_vorticity(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+    # kinem['eil_stp'] = np.float64('nan')
+    # kinem['eil_scp'] = np.float64('nan')
+    # kinem['ehi_0_to_1000'] = np.float64('nan')
+    # kinem['ehi_0_to_3000'] = np.float64('nan')
 
-    intrp['rhINTRP'] = s.get_relative_humidity()
-    intrp['tINTRP'] = s.get_temperature()
-    intrp['mrINTRP'] = s.get_mixing_ratio(True)
-    intrp['thetaINTRP'] = s.get_potential_temperature()
-    intrp['thetaeINTRP'] = s.get_equivalent_potential_temperature()
-    intrp['wbINTRP'] = s.get_wet_bulb_temperature()
-    intrp['pINTRP'] = s.get_pressure(True)
-    intrp['uINTRP'] = s.get_wind_u_vector()
-    intrp['vINTRP'] = s.get_wind_v_vector()
-    intrp['zINTRP'] = s.get_height()
+    # intrp['rhINTRP'] = s.get_relative_humidity()
+    # intrp['tINTRP'] = s.get_temperature()
+    # intrp['mrINTRP'] = s.get_mixing_ratio(True)
+    # intrp['thetaINTRP'] = s.get_potential_temperature()
+    # intrp['thetaeINTRP'] = s.get_equivalent_potential_temperature()
+    # intrp['wbINTRP'] = s.get_wet_bulb_temperature()
+    # intrp['pINTRP'] = s.get_pressure(True)
+    # intrp['uINTRP'] = s.get_wind_u_vector()
+    # intrp['vINTRP'] = s.get_wind_v_vector()
+    # intrp['zINTRP'] = s.get_height()
 
-    #This whole section is really ugly, but computing like 150+ parcel traces seems needless expensive.
-    def interpolate(var,hgts,step):
-        levels=np.arange(0,np.max(hgts),step)
-        varinterp=np.zeros(len(levels))
-        for i in range(0,len(levels)):
-            try:
-                lower=np.where(hgts-levels[i]<=0,hgts-levels[i],-np.inf).argmax()
-                varinterp[i]=(((var[lower+1]-var[lower])/(hgts[lower+1]-hgts[lower]))*(levels[i]-hgts[lower])+var[lower])
-            except IndexError:
-                # Handle the case where the index is out of bounds
-                varinterp[i] = np.nan 
-        return varinterp 
+    # #This whole section is really ugly, but computing like 150+ parcel traces seems needless expensive.
+    # def interpolate(var,hgts,step):
+    #     levels=np.arange(0,np.max(hgts),step)
+    #     varinterp=np.zeros(len(levels))
+    #     for i in range(0,len(levels)):
+    #         try:
+    #             lower=np.where(hgts-levels[i]<=0,hgts-levels[i],-np.inf).argmax()
+    #             varinterp[i]=(((var[lower+1]-var[lower])/(hgts[lower+1]-hgts[lower]))*(levels[i]-hgts[lower])+var[lower])
+    #         except IndexError:
+    #             # Handle the case where the index is out of bounds
+    #             varinterp[i] = np.nan 
+    #     return varinterp 
 
-    intrp['cape_profileINTRP'] = interpolate(thermo['cape_profile'], intrp['zINTRP'], 100.0)
-    intrp['cin_profileINTRP'] = interpolate(thermo['cin_profile'], intrp['zINTRP'], 100.0)
-    intrp['3cape_profileINTRP'] = interpolate(thermo['3cape_profile'], intrp['zINTRP'], 100.0)
+    # intrp['cape_profileINTRP'] = interpolate(thermo['cape_profile'], intrp['zINTRP'], 100.0)
+    # intrp['cin_profileINTRP'] = interpolate(thermo['cin_profile'], intrp['zINTRP'], 100.0)
+    # intrp['3cape_profileINTRP'] = interpolate(thermo['3cape_profile'], intrp['zINTRP'], 100.0)
     
     #################################################################
     ### DECLARE PLOT TITLES FROM CLEAN_DATA ###
@@ -545,7 +545,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
                                   storm_motion_type='user_defined', 
                                   storm_motion_u=kinem['sm_u']*units.kts, storm_motion_v=kinem['sm_v']*units.kts)
 
-                trace_Trho = density_temperature(trace[2], trace[3], trace[4])
+                trace_Trho = thermo['esbP_trace']
 
 
                 muecapeline = skew.plot(thermo['esbP_trace'], thermo['esbT_trace'], 
@@ -721,14 +721,12 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
             
             
     # MAX LAPSE RATE ANNOTATION---------------------------------
-    # Add nullcheck since lapse rate output not in C++ code
-    if(thermo['lr_max'] != None):
-        x_start, x_end = 0.15, 0.17
-        x_mid = (x_start + x_end)/2
-        Lapse_line = plt.Line2D([x_mid, x_mid], (thermo['lr_max'][1], thermo['lr_max'][2]), color='firebrick', linewidth=3, alpha=0.3, transform=skew.ax.get_yaxis_transform())
-        plt.text((x_start-0.005), (thermo['lr_max'][2]-8), f"{np.round(thermo['lr_max'][0],1)}", 
-                color='firebrick', weight='bold', fontsize=13, alpha=0.6, transform=skew.ax.get_yaxis_transform())
-        skew.ax.add_artist(Lapse_line)
+    x_start, x_end = 0.15, 0.17
+    x_mid = (x_start + x_end)/2
+    Lapse_line = plt.Line2D([x_mid, x_mid], (thermo['lr_max'][1], thermo['lr_max'][2]), color='firebrick', linewidth=3, alpha=0.3, transform=skew.ax.get_yaxis_transform())
+    plt.text((x_start-0.005), (thermo['lr_max'][2]-8), f"{np.round(thermo['lr_max'][0],1)}", 
+            color='firebrick', weight='bold', fontsize=13, alpha=0.6, transform=skew.ax.get_yaxis_transform())
+    skew.ax.add_artist(Lapse_line)
 
     # EFFECTIVE INFLOW LAYER ANNOTATION--------------------------
     x_start, x_end = 0.18, 0.20
@@ -748,7 +746,7 @@ def __full_sounding(clean_data, color_blind, dark_mode, storm_motion, special_pa
       
     # HGZ ANNOTATION-------------------------------
     else:
-        if ((thermo['hgz'] != None) and (thermo['hgz'][1] < p[0].m)):
+        if ((thermo['hgz'][1] < p[0].m)):
             x_start, x_end = 0.12, 0.14
             x_mid = (x_start + x_end)/2
             plt.text((x_start+0.01), (thermo['hgz'][1]-8), "HGZ", weight='bold',color='green', alpha=0.6, ha='center', fontsize=13, transform=skew.ax.get_yaxis_transform())

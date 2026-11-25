@@ -12,7 +12,7 @@
 class Sounding {
 public:
     Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
-             std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
+             std::vector<double> wind_u_, std::vector<double> wind_v_,
              std::vector<double> height_, bool needs_interpolation_, bool interpolate_cape_, int resolution_, bool needs_multiple_parcels_);
 
     Sounding(std::string sounding_file_name, bool needs_interpolation_, bool interpolate_cape_, int resolution_, bool needs_multiple_parcels_);
@@ -198,6 +198,17 @@ public:
         return pressure;
     }
 
+    std::vector<double> get_dewpoint(bool needs_celsius = false) {
+        if (needs_celsius) {
+            std::vector<double> cur;
+            for (int i = 0; i < interpolated_dewpoint.size(); i++) {
+                cur.push_back(interpolated_dewpoint[i] - 273.15);
+            }
+            return cur;
+        }
+        return interpolated_dewpoint;
+    }
+
     //Gets height averages RH between heights
     double get_rh(int min_height, int max_height) {
         int i = 0;
@@ -226,6 +237,142 @@ public:
             total_rh += (interpolated_relative_humidity[i-1] + interim_rh) / 2 * height_diff;
         }
         return total_rh / (max_height - min_height);
+    }
+
+    double get_lapse_rate(int min_height, int max_height) {
+        int i = 0;
+        double bottom_temp = 0.0;
+        double top_temp = 0.0;
+        while(interpolated_height[i] < min_height) {
+            i++;
+        }
+
+        if(interpolated_height[i] != min_height) {
+            double height_diff = interpolated_height[i] - min_height;
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            bottom_temp = interpolated_temperature[i-1] + lapse_rate[i-1] * (height_prop / 1000.0);
+        } else {
+            bottom_temp = interpolated_temperature[i];
+        }
+        i++;
+        while(interpolated_height[i] < max_height) {
+            i++;
+        }
+        if(interpolated_height[i] == max_height) {
+            top_temp += interpolated_temperature[i];
+        } else {
+            double height_diff = interpolated_height[i] - min_height;
+            double height_prop = height_diff / (interpolated_height[i] - interpolated_height[i-1]);
+            top_temp = interpolated_temperature[i-1] + lapse_rate[i-1] * (height_prop / 1000.0);
+        }
+        return (bottom_temp - top_temp) / ((max_height - min_height) / 1000.0);
+    }
+
+    std::vector<double> get_max_lapse_rate(int min_height, int max_height, int depth, int interval) {
+        double max = 0;
+        double bottom_pressure = 0;
+        double top_pressure = 0;
+        for (int cur_low = min_height; cur_low + depth <= max_height; cur_low += interval) {
+            double cur_lapse = get_lapse_rate(cur_low, cur_low+depth);
+            if(cur_lapse > max) {
+                max = cur_lapse;
+                bottom_pressure = interpolated_pressure[cur_low/resolution];
+                top_pressure = interpolated_pressure[(cur_low+depth)/resolution];
+            }
+        }
+        std::vector<double> out;
+        out.push_back(max);
+        out.push_back(bottom_pressure / 100.0);
+        out.push_back(top_pressure / 100.0);
+        return out;
+    }
+
+    double get_sb_min_parcel_pressure() {
+        double totalB = 0.0;
+        int i = 0;
+        while (interpolated_height[i] < sb_lfc) {
+            i++;
+        }
+        totalB += sb_parcel_buoyancy[i];
+        while (totalB > 0.0) {
+            i++;
+            if (i == sb_parcel_buoyancy.size()) {
+                break;
+            }
+            totalB += sb_parcel_buoyancy[i];
+        }
+        return interpolated_pressure[i-1];
+    }
+
+    double get_ml_min_parcel_pressure() {
+        double totalB = 0.0;
+        int i = 0;
+        while (interpolated_height[i] < ml_lfc) {
+            i++;
+        }
+        totalB += ml_parcel_buoyancy[i];
+        while (totalB > 0.0) {
+            i++;
+            if (i == ml_parcel_buoyancy.size()) {
+                break;
+            }
+            totalB += ml_parcel_buoyancy[i];
+        }
+        return interpolated_pressure[i-1];
+    }
+
+    double get_mu_min_parcel_pressure() {
+        double totalB = 0.0;
+        int i = 0;
+        while (interpolated_height[i] < mu_lfc) {
+            i++;
+        }
+        totalB += mu_parcel_buoyancy[i];
+        while (totalB > 0.0) {
+            i++;
+            if (i == mu_parcel_buoyancy.size()) {
+                break;
+            }
+            totalB += mu_parcel_buoyancy[i];
+        }
+        return interpolated_pressure[i-1];
+    }
+
+    double get_pbl_top() {
+        double targetTheta = interpolated_equivalent_potential_temperature[0] + 0.5;
+        int i = 1;
+        while (interpolated_equivalent_potential_temperature[i] < targetTheta) {
+            i++;
+        }
+        return interpolated_height[i];
+    }
+
+    std::vector<double> get_dgz() {
+        int i = 0;
+        std::vector<double> out;
+        while (interpolated_temperature[i] > 261.15) {
+            i++;
+        }
+        out.push_back(interpolated_pressure[i] / 100.0);
+        while (interpolated_temperature[i] > 256.15) {
+            i++;
+        }
+        out.push_back(interpolated_pressure[i] / 100.0);
+        return out;
+    }
+
+    std::vector<double> get_hgz() {
+        int i = 0;
+        std::vector<double> out;
+        while (interpolated_temperature[i] > 263.15) {
+            i++;
+        }
+        out.push_back(interpolated_pressure[i]);
+        while (interpolated_temperature[i] > 243.15) {
+            i++;
+        }
+        out.push_back(interpolated_pressure[i]);
+        return out;
     }
     
     double get_w(int min_height, int max_height) {
@@ -1319,6 +1466,10 @@ public:
     }
 
     std::vector<double> get_wet_bulb_temperature() {
+        return wet_bulb_temperature;
+    }
+
+    std::vector<double> get_wet_bulb_temperature_interpolated() {
         return interpolated_wet_bulb_temperature;
     }
 
@@ -1557,6 +1708,7 @@ private:
     std::vector<double> lapse_rate; //lapse_rate[i] = lapse rate from height[i] to height[i+1]
     std::vector<double> interpolated_virtual_temperature;
     std::vector<double> interpolated_wet_bulb_temperature;
+    std::vector<double> wet_bulb_temperature;
 
 
     std::vector<double> interpolated_height;
@@ -1620,6 +1772,8 @@ private:
 
 
     void calc_lapse_rates();
+
+    void calc_relative_humidity();
 
     void interpolate_temperature();
 
@@ -1721,12 +1875,11 @@ private:
 };
 
 Sounding::Sounding(std::vector<double> pressure_, std::vector<double> temperature_, std::vector<double> dewpoint_,
-    std::vector<double> relative_humidity_, std::vector<double> wind_u_, std::vector<double> wind_v_,
+    std::vector<double> wind_u_, std::vector<double> wind_v_,
     std::vector<double> height_, bool needs_interpolation_, bool interpolated_cape_, int resolution_, bool needs_multiple_parcels_) {
     pressure = pressure_;
     temperature = temperature_;
     dewpoint = dewpoint_;
-    relative_humidity = relative_humidity_;
     wind_u = wind_u_;
     wind_v = wind_v_;
     height = height_;
@@ -1793,6 +1946,7 @@ void Sounding::main_calc() {
         size = (int) height.size();
 
         interpolate_temperature();
+        calc_relative_humidity();
         interpolate_relative_humidity();
         interpolate_wind_u();
         interpolate_wind_v();
@@ -1819,8 +1973,9 @@ void Sounding::main_calc() {
         interpolated_wind_u = wind_u;
         interpolated_wind_v = wind_v;
         interpolated_pressure = pressure;
-        calc_interpolated_saturation_vapor_pressures();
-        calc_interpolated_vapor_pressures();
+        calc_relative_humidity();
+        interpolated_vapor_pressure = vapor_pressure;
+        interpolated_saturation_vapor_pressure = saturation_vapor_pressure;
         interpolated_dewpoint = dewpoint;
     }
 
@@ -1990,27 +2145,16 @@ void Sounding::calc_interpolated_saturation_vapor_pressures() {
         double exponent = exp(inner_exp);
         interpolated_saturation_vapor_pressure.push_back(e_s0 * exponent);
     }
-
-    for (int i = 0; i < temperature.size(); i++) {
-        double t_diff = (1 / T0 - 1 / (temperature[i]));
-        double inner_exp = Lv_to_Rv_ratio * t_diff;
-        double exponent = exp(inner_exp);
-        saturation_vapor_pressure.push_back(e_s0 * exponent);
-    }
 }
 
 //Multiplied saturation vapor pressure by RH
 void Sounding::calc_interpolated_vapor_pressures() {
-    for (int i = 0; i < interpolated_height.size(); i++) {
-        interpolated_vapor_pressure.push_back(
-            interpolated_saturation_vapor_pressure[i] * interpolated_relative_humidity[i] / 100);
-    }
-
-    for (int i = 0; i < height.size(); i++) {
-        vapor_pressure.push_back(saturation_vapor_pressure[i] * relative_humidity[i] / 100);
+    for (int i = 0; i < interpolated_temperature.size(); i++) {
+        interpolated_vapor_pressure.push_back(interpolated_relative_humidity[i]
+            * interpolated_saturation_vapor_pressure[i] / 100.0);
     }
 }
-\
+
 
 void Sounding::calc_interpolated_mixing_ratios() {
     for (int i = 0; i < interpolated_height.size(); i++) {
@@ -2024,6 +2168,7 @@ void Sounding::calc_interpolated_mixing_ratios() {
         mixing_ratio.push_back(compute_mixing_ratio_saturation_linear_combo(dewpoint[i], pressure[i]));
         specific_humidity.push_back(mixing_ratio[i] / (1 + mixing_ratio[i]));
     }
+
 }
 
 void Sounding::calc_lapse_rates() {
@@ -2032,6 +2177,28 @@ void Sounding::calc_lapse_rates() {
         double delta_z = height[i] - height[i + 1];
         lapse_rate.push_back(-1 * delta_T / delta_z);
     }
+}
+
+void Sounding::calc_relative_humidity() {
+    for (int i = 0; i < temperature.size(); i++) {
+        double t_diff = (1 / T0 - 1 / (temperature[i]));
+        double inner_exp = Lv_to_Rv_ratio * t_diff;
+        double exponent = exp(inner_exp);
+        saturation_vapor_pressure.push_back(e_s0 * exponent);
+    }
+
+    for (int i = 0; i < temperature.size(); i++) {
+        double t_diff = (1 / T0 - 1 / (dewpoint[i]));
+        double inner_exp = Lv_to_Rv_ratio * t_diff;
+        double exponent = exp(inner_exp);
+        vapor_pressure.push_back(e_s0 * exponent);
+    }
+
+
+     for (int i = 0; i < height.size(); i++) {
+         relative_humidity.push_back(100.0 * vapor_pressure[i] / saturation_vapor_pressure[i]);
+     }
+
 }
 
 void Sounding::calc_interpolated_virtual_temperatures() {
@@ -2061,6 +2228,18 @@ void Sounding::calc_wet_bulb_temperature() {
         double term4 = 0.00391838 * std::pow(rh, 1.5) * std::atan(0.023101 * rh);
 
         interpolated_wet_bulb_temperature.push_back(term1 + term2 - term3 + term4 - 4.686035);
+    }
+
+    for (int i = 0; i < height.size(); i++) {
+        double T = temperature[i] - 273.15;
+        double rh = relative_humidity[i];
+
+        double term1 = T * std::atan(0.151977 * std::pow(rh + 8.313659, 0.5));
+        double term2 = std::atan(T+rh);
+        double term3 = std::atan(rh - 1.676331);
+        double term4 = 0.00391838 * std::pow(rh, 1.5) * std::atan(0.023101 * rh);
+
+        wet_bulb_temperature.push_back(term1 + term2 - term3 + term4 - 4.686035);
     }
 }
 
@@ -2928,23 +3107,22 @@ void Sounding::calc_sbncape_peters() {
 
 void Sounding::calc_sb_e_tilde_and_frac_entrainment() {
     double v_sr = get_srw(0, 1000);
-    double density_ratio = 1.0/0.16;
+    double sigma = 1.1;
     double alpha = 0.8;
     double prandtl_number = 1.0 / 3.0;
     double von_karman_constant = 0.18;
     double L = 120.0;
-    double psi_term_one = (von_karman_constant * (alpha * alpha) *  (std::numbers::pi * std::numbers::pi)) / (prandtl_number * sb_el);
-    double psi_term_two = (sb_el / density_ratio) * (sb_el / density_ratio);
-    double psi_term_three = L / (sb_lcl * sb_lcl);
-    double psi = psi_term_one * psi_term_two * psi_term_three / 4.0;
+    double psi_numerator = (von_karman_constant * (alpha * alpha) *  (std::numbers::pi * std::numbers::pi) * L);
+    double psi_denominator = prandtl_number * (sigma * sigma) * sb_el * 4.0;
+    double psi = psi_numerator / psi_denominator;
     double vsr_tilde = v_sr / (std::pow(2.0 * sb_cape, 0.5));
     double n_tilde = sb_ncape / sb_cape;
     
     double vsr_tilde_squared = vsr_tilde * vsr_tilde;
 
-    double numerator = -1 - psi - (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_one = 1 + psi + (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_two = 4 * psi / vsr_tilde_squared * (1 - psi * n_tilde);
+    double numerator = -1.0 - (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_one = 1.0 + (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_two = 4.0 * psi / vsr_tilde_squared;
     double square_root = std::pow(root_term_one * root_term_one + root_term_two, 0.5);
 
     numerator += square_root;
@@ -3259,12 +3437,14 @@ void Sounding::calc_mlparcel_path() {
         
     double q_sat_prev = 0;
     double i = 0;
+    bool went_moist = false;
 
     while (i < size - 1) {
         i++;
         double q_sat = (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - 1], pressure[i - 1]);
 
         if (Q_v_lif[i-1]<q_sat) {
+
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], 0));
             //std::cout << "i: " << i << " T_lif[i]: " << T_lif[i] << std::endl;
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * 0 * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
@@ -3273,7 +3453,8 @@ void Sounding::calc_mlparcel_path() {
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
             
-            if (Q_v_lif[i] >= q_sat) {
+            if (Q_v_lif[i] >= q_sat && !went_moist) {
+                went_moist = true;
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 double dz_dry = satrat * (height[i] - height[i - 1]);
                 ml_lfc = height[i-1] + dz_dry;
@@ -3409,20 +3590,22 @@ void Sounding::calc_mlncape() {
 
 void Sounding::calc_ml_e_tilde_and_frac_entrainment() {
     double v_sr = get_srw(0, 1000);
-    double H = ml_el;
-    double sigma = (ml_lcl/ml_el) * 0.16;
+    double sigma = 1.1;
     double alpha = 0.8;
     double prandtl_number = 1.0 / 3.0;
     double von_karman_constant = 0.18;
-    double psi = von_karman_constant * (alpha * alpha) * (std::numbers::pi * std::numbers::pi) * 120.0 / (4.0 * prandtl_number * (sigma * sigma) * H);
+    double L = 120.0;
+    double psi_numerator = (von_karman_constant * (alpha * alpha) *  (std::numbers::pi * std::numbers::pi) * L);
+    double psi_denominator = prandtl_number * (sigma * sigma) * ml_el * 4.0;
+    double psi = psi_numerator / psi_denominator;
     double vsr_tilde = v_sr / (std::pow(2.0 * ml_cape, 0.5));
     double n_tilde = ml_ncape / ml_cape;
     
     double vsr_tilde_squared = vsr_tilde * vsr_tilde;
 
-    double numerator = -1 - psi - (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_one = 1 + psi + (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_two = 4 * psi / vsr_tilde_squared * (1 - psi * n_tilde);
+    double numerator = -1.0 - (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_one = 1.0 + (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_two = 4.0 * psi / vsr_tilde_squared;
     double square_root = std::pow(root_term_one * root_term_one + root_term_two, 0.5);
 
     numerator += square_root;
@@ -3449,20 +3632,21 @@ void Sounding::calc_ml_entrainment_buoyancy() {
 
     double q_sat_prev = 0;
     unsigned long i = 0;
+    bool went_moist = false;
 
     while (i < size - 1) {
         i++;
         double q_sat = (1 - Q_t_lif[i - 1]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i - 1], pressure[i - 1]);
 
-        if ((Q_v_lif[i - 1] < q_sat) /*&& (pressure[i] > 50000) Why is this here? Artifact of peters? */){
+        if ((Q_v_lif[i - 1] < q_sat) /*&& (pressure[i] > 50000) Why is this here? Artifact of peters? */) {
             T_lif.push_back(T_lif[i - 1] + (height[i] - height[i - 1]) * dry_lapse_rate(T_lif[i - 1], Q_v_lif[i - 1], temperature[i - 1], specific_humidity[i - 1], ml_fractional_entrainment));
             Q_v_lif.push_back(Q_v_lif[i - 1] - (height[i] - height[i - 1]) * ml_fractional_entrainment * (Q_v_lif[i - 1] - specific_humidity[i - 1]));
             Q_t_lif.push_back(Q_v_lif[i]);
             q_sat_prev = q_sat;
             q_sat = (1 - Q_t_lif[i]) * compute_mixing_ratio_saturation_linear_combo(T_lif[i], pressure[i]);
             
-            if (Q_v_lif[i] >= q_sat) {
-                
+            if (Q_v_lif[i] >= q_sat && !went_moist) {
+                went_moist = true;
                 double satrat = (Q_v_lif[i] - q_sat_prev) / (q_sat - q_sat_prev);
                 
                 if(satrat < 0.05) { //Check if this is original
@@ -3683,20 +3867,22 @@ void Sounding::calc_muncape() {
 
 void Sounding::calc_mu_e_tilde_and_frac_entrainment() {
     double v_sr = get_srw(0, 1000);
-    double H = mu_el;
     double sigma = 1.1;
     double alpha = 0.8;
     double prandtl_number = 1.0 / 3.0;
     double von_karman_constant = 0.18;
-    double psi = von_karman_constant * (alpha * alpha) * (std::numbers::pi * std::numbers::pi) * 120.0 / (4.0 * prandtl_number * (sigma * sigma) * H);
+    double L = 120.0;
+    double psi_numerator = (von_karman_constant * (alpha * alpha) *  (std::numbers::pi * std::numbers::pi) * L);
+    double psi_denominator = prandtl_number * (sigma * sigma) * mu_el * 4.0;
+    double psi = psi_numerator / psi_denominator;
     double vsr_tilde = v_sr / (std::pow(2.0 * mu_cape, 0.5));
     double n_tilde = mu_ncape / mu_cape;
     
     double vsr_tilde_squared = vsr_tilde * vsr_tilde;
 
-    double numerator = -1 - psi - (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_one = 1 + psi + (psi / vsr_tilde_squared) * n_tilde;
-    double root_term_two = 4 * psi / vsr_tilde_squared * (1 - psi * n_tilde);
+    double numerator = -1.0 - (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_one = 1.0 + (psi / vsr_tilde_squared) * n_tilde;
+    double root_term_two = 4.0 * psi / vsr_tilde_squared;
     double square_root = std::pow(root_term_one * root_term_one + root_term_two, 0.5);
 
     numerator += square_root;

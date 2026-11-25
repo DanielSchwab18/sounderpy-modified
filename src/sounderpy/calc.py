@@ -22,6 +22,10 @@ from ecape_parcel.ecape_calc import calc_ecape
 # sounderpy modules
 from .utils import modify_surface, find_nearest, mag, mag_round
 
+##### NEW IMPORTS
+import cppimport
+bindings = cppimport.imp("bindings")
+
 
 """
     SOUNDERPY SPYCALC FUNCTIONS  
@@ -166,6 +170,242 @@ class sounding_params:
         kinem  = {} 
         thermo = {}
         intrp  = {}
+
+
+        T  = self.clean_data['T']
+        Td = self.clean_data['Td']
+        p  = self.clean_data['p']
+        z  = self.clean_data['z']
+        u  = self.clean_data['u']
+        v  = self.clean_data['v']
+
+        s = bindings.Sounding(p.magnitude, T.magnitude, Td.magnitude, u.magnitude, v.magnitude, z.magnitude, True, True, 100, True)
+
+        general['rh_0_500'] = s.get_rh(0, 500)
+        general['rh_0_1000'] = s.get_rh(0, 1000)
+        general['rh_1_3000'] = s.get_rh(1000, 3000)
+        general['rh_3_6000'] = s.get_rh(3000, 6000)
+        general['rh_6_9000'] = s.get_rh(6000, 9000)
+    
+        general['w_0_500'] = s.get_w(0, 500) * 1000.0
+        general['w_0_1000'] = s.get_w(0, 1000) * 1000.0
+        general['w_1_3000'] = s.get_w(1000, 3000) * 1000.0
+        general['w_3_6000'] = s.get_w(3000, 6000) * 1000.0
+        general['w_6_9000'] = s.get_w(6000, 9000) * 1000.0 
+    
+        general['wb_frz_pt_z'] = np.float64('nan') * units.m
+        general['wb_frz_pt_p'] = np.float64('nan') * units.m
+        general['frz_pt_z'] = np.float64('nan') * units.m
+        general['frz_pt_p'] = np.float64('nan') * units.m
+        general['pwat'] = np.float64('nan')
+    
+        general['sfc_pressure'] = s.get_sfc_pressure() * units.hPa
+        general['rel_humidity'] = s.get_relative_humidity()
+        general['spec_humidity'] = s.get_specific_humidity(True) * units.g/units.kg
+        general['mix_ratio'] = s.get_mixing_ratio(True) * units.g/units.kg
+        general['virt_temp'] = s.get_virtual_temperature(True) * units.degC
+    
+        thermo['sbT_trace'] = np.ma.asarray(s.get_sb_parcel_temp(True))
+        thermo['sbP_trace'] = np.ma.asarray(s.get_pressure(True))
+        thermo['sbZ_trace'] = np.ma.asarray(s.get_height())
+        
+        thermo['muT_trace'] = np.ma.asarray(s.get_mu_parcel_temp(True))
+        thermo['muP_trace'] = np.ma.asarray(s.get_pressure(True))
+        thermo['muZ_trace'] = np.ma.asarray(s.get_height())
+        
+        thermo['mlT_trace'] = np.ma.asarray(s.get_ml_parcel_temp(True))
+        thermo['mlP_trace'] = np.ma.asarray(s.get_pressure(True))
+    
+        thermo['esbT_trace'] = np.ma.asarray(s.get_mu_entrainment_parcel_temp(True))
+        thermo['esbP_trace'] = np.ma.asarray(s.get_pressure(True))
+    
+        thermo['sb_lcl_p'] = s.get_sb_lcl_p() / 100.0
+        thermo['sb_lcl_z'] = s.get_sb_lcl()
+        thermo['sb_lfc_p'] = s.get_sb_lfc_p() / 100.0
+        thermo['sb_lfc_z'] = s.get_sb_lfc()
+        thermo['sb_el_p'] = s.get_sb_el_p() / 100.0
+        thermo['sb_el_z'] = s.get_sb_el()
+        thermo['sb_el_T'] = s.get_sb_el_t()
+        thermo['sb_mpl_p'] = s.get_sb_min_parcel_pressure()
+        thermo['sbcape'] = s.get_sbcape()
+        thermo['sbcin'] = s.get_sbcin()
+        thermo['sb3cape'] = s.get_sb3cape()
+        thermo['sb6cape'] = s.get_sb6cape()
+    
+        thermo['ml_lcl_p'] = s.get_ml_lcl_p() / 100.0
+        thermo['ml_lcl_z'] = s.get_ml_lcl()
+        thermo['ml_lfc_p'] = s.get_ml_lfc_p() / 100.0
+        thermo['ml_lfc_z'] = s.get_ml_lfc()
+        thermo['ml_el_p'] = s.get_ml_el_p() / 100.0
+        thermo['ml_el_z'] = s.get_ml_el()
+        thermo['ml_el_T'] = s.get_ml_el_t()
+        thermo['ml_mpl_p'] = s.get_ml_min_parcel_pressure()
+        thermo['mlcape'] = s.get_mlcape()
+        thermo['mlcin'] = s.get_mlcin()
+        thermo['ml3cape'] = s.get_ml3cape()
+        thermo['ml6cape'] = s.get_ml6cape()
+    
+        thermo['mu_lcl_p'] = s.get_mu_lcl_p() / 100.0
+        thermo['mu_lcl_z'] = s.get_mu_lcl()
+        thermo['mu_lfc_p'] = s.get_mu_lfc_p() / 100.0
+        thermo['mu_lfc_z'] = s.get_mu_lfc()
+        thermo['mu_el_p'] = s.get_mu_el_p() / 100.0
+        thermo['mu_el_z'] = s.get_mu_el()
+        thermo['mu_el_T'] = s.get_mu_el_t()
+        thermo['mu_mpl_p'] = s.get_mu_min_parcel_pressure()
+        thermo['mucape'] = s.get_mucape()
+        thermo['mucin'] = s.get_mucin()
+        thermo['mu3cape'] = s.get_mu3cape()
+        thermo['mu6cape'] = s.get_mu6cape()
+    
+        try:
+            thermo['mu_ncape'] = round(thermo['mucape'] / (thermo['mu_el_z'] - thermo['mu_lfc_z']),3) # Original sounderpy rounds to 1 digit
+        except:
+            thermo['mu_ncape'] = 0
+
+        try:
+            thermo['sb_ncape'] = round(thermo['sbcape'] / (thermo['sb_el_z'] - thermo['sb_lfc_z']),3)
+        except:
+            thermo['sb_ncape'] = 0
+
+        try:
+            thermo['ml_ncape'] = round(thermo['mlcape'] / (thermo['ml_el_z'] - thermo['ml_lfc_z']),3) 
+        except:
+            thermo['ml_ncape'] = 0
+        
+        thermo['dcape'] = np.float64('nan')
+        thermo['dcin'] = np.float64('nan')
+        thermo['dparcel_p'] = None
+        thermo['dparcel_T'] = None
+        thermo['cape_profile'] = np.ma.asarray(s.get_cape_vector())
+        thermo['cin_profile'] = np.ma.asarray(s.get_cin_vector())
+        thermo['3cape_profile'] = np.ma.asarray(s.get_3cape_vector())
+    
+        thermo['pbl_top'] = s.get_pbl_top()
+        thermo['dgz'] = np.ma.asarray(s.get_dgz())
+        thermo['hgz'] = np.ma.asarray(s.get_hgz())
+        thermo['lr_36km'] = s.get_lapse_rate(3000,6000)
+        thermo['lr_03km'] = s.get_lapse_rate(0,3000)
+        thermo['lr_max'] = np.ma.asarray(s.get_max_lapse_rate(0, 6000, 2000, 250))
+        thermo['temp_adv'] = None
+    
+        thermo['sb_ecape'] = s.get_sbecape()
+        thermo['ml_ecape'] = s.get_mlecape()
+        thermo['mu_ecape'] = s.get_muecape()
+
+        #print(thermo['mu_ecape'])
+    
+        kinem['eil'] = (s.get_base_eil_p() / 100.0, s.get_top_eil_p() / 100.0) 
+        kinem['eil_z'] = (s.get_base_eil_z(), s.get_top_eil_z())
+        kinem['sm_rm'] = (s.get_rm_bunkers_u(), s.get_rm_bunkers_v())
+        kinem['sm_lm'] = (s.get_lm_bunkers_u(), s.get_lm_bunkers_v())
+        kinem['sm_mw'] = (s.get_mean_wind_sm_u(), s.get_mean_wind_sm_v())
+        kinem['sm_u'] = kinem['sm_rm'][0]
+        kinem['sm_v'] = kinem['sm_rm'][1]
+        kinem['dtm'] = (s.get_dtm_u(),  s.get_dtm_v())
+        kinem['mcs'] = np.ma.asarray(s.get_mcs())    
+        kinem['shear_0_to_500'] = s.get_shear(0, 500)
+        kinem['shear_0_to_1000'] = s.get_shear(0, 1000)
+        kinem['shear_1_to_3000'] = s.get_shear(1000, 3000)
+        kinem['shear_3_to_6000'] = s.get_shear(3000, 6000)
+        kinem['shear_6_to_9000'] = s.get_shear(6000, 9000)
+        kinem['shear_0_to_3000'] = s.get_shear(0, 3000)
+        kinem['shear_0_to_6000'] = s.get_shear(0, 6000)
+        kinem['shear_eil'] = s.get_shear(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+        kinem['srh_0_to_500'] = s.get_srh(0, 500)
+        kinem['srh_0_to_1000'] = s.get_srh(0, 1000)
+        kinem['srh_1_to_3000'] = s.get_srh(1000, 3000)
+        kinem['srh_3_to_6000'] = s.get_srh(3000, 6000)
+        kinem['srh_6_to_9000'] = s.get_srh(6000, 9000)
+        kinem['srh_0_to_3000'] = s.get_srh(0, 3000)
+        kinem['srh_0_to_6000'] = s.get_srh(0, 6000)
+        kinem['srh_eil'] = s.get_srh(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+        kinem['srw_0_to_500'] = s.get_srw(0, 500) * units.kts
+        kinem['srw_0_to_1000'] = s.get_srw(0, 1000) * units.kts
+        kinem['srw_1_to_3000'] = s.get_srw(1000, 3000) * units.kts
+        kinem['srw_3_to_6000'] = s.get_srw(3000, 6000) * units.kts
+        kinem['srw_6_to_9000'] = s.get_srw(6000, 9000) * units.kts
+        kinem['srw_eil'] = s.get_srw(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * units.kts
+    
+        kinem['srw'] = np.ma.asarray(s.get_srw_vector())
+        kinem['vort'] = np.ma.asarray(s.get_horizontal_vorticity_vector())
+        kinem['swv'] = np.ma.asarray(s.get_streamwise_vorticity_vector())
+        kinem['swv_perc'] = np.ma.asarray(s.get_streamwise_vorticity_percent_vector())
+    
+        kinem['swv_perc_0_to_500'] = s.get_streamwise_vorticity_percent(0, 500) * 100.0
+        kinem['swv_perc_0_to_1000'] = s.get_streamwise_vorticity_percent(0, 1000) * 100.0
+        kinem['swv_perc_1_to_3000'] = s.get_streamwise_vorticity_percent(1000, 3000) * 100.0
+        kinem['swv_perc_3_to_6000'] = s.get_streamwise_vorticity_percent(3000, 6000) * 100.0
+        kinem['swv_perc_6_to_9000'] = s.get_streamwise_vorticity_percent(6000, 9000) * 100.0
+        kinem['swv_perc_eil'] = s.get_streamwise_vorticity_percent(int(kinem['eil_z'][0]), int(kinem['eil_z'][1])) * 100.0
+        kinem['swv_0_to_500'] = s.get_streamwise_vorticity(0, 500)
+        kinem['swv_0_to_1000'] = s.get_streamwise_vorticity(0, 1000)
+        kinem['swv_1_to_3000'] = s.get_streamwise_vorticity(1000, 3000)
+        kinem['swv_3_to_6000'] = s.get_streamwise_vorticity(3000, 6000)
+        kinem['swv_6_to_9000'] = s.get_streamwise_vorticity(6000, 9000)
+        kinem['swv_eil'] = s.get_streamwise_vorticity(int(kinem['eil_z'][0]), int(kinem['eil_z'][1]))
+        kinem['eil_stp'] = s.get_stp()
+        kinem['eil_scp'] = s.get_scp()
+        kinem['ehi_0_to_1000'] = s.get_ehi_0_1000()
+        kinem['ehi_0_to_3000'] = s.get_ehi_0_3000()
+    
+        intrp['rhINTRP'] = s.get_relative_humidity()
+        intrp['tINTRP'] = s.get_temperature()
+        intrp['tdINTRP'] = s.get_dewpoint(True)
+        intrp['mrINTRP'] = s.get_mixing_ratio(True)
+        intrp['thetaINTRP'] = s.get_potential_temperature()
+        intrp['thetaeINTRP'] = s.get_equivalent_potential_temperature()
+        intrp['pINTRP'] = s.get_pressure(True)
+        intrp['uINTRP'] = s.get_wind_u_vector()
+        intrp['vINTRP'] = s.get_wind_v_vector()
+        intrp['zINTRP'] = s.get_height()
+        intrp['wbINTRP'] = mpcalc.wet_bulb_temperature(intrp['pINTRP']*units.hPa, intrp['tINTRP']*units.degC, intrp['tdINTRP']*units.degC)
+
+    
+        #This whole section is really ugly, but computing like 150+ parcel traces seems needless expensive.
+        def interpolate(var,hgts,step):
+            levels=np.arange(0,np.max(hgts),step)
+            varinterp=np.zeros(len(levels))
+            for i in range(0,len(levels)):
+                try:
+                    lower=np.where(hgts-levels[i]<=0,hgts-levels[i],-np.inf).argmax()
+                    varinterp[i]=(((var[lower+1]-var[lower])/(hgts[lower+1]-hgts[lower]))*(levels[i]-hgts[lower])+var[lower])
+                except IndexError:
+                    # Handle the case where the index is out of bounds
+                    varinterp[i] = np.nan 
+            return varinterp 
+    
+        intrp['cape_profileINTRP'] = interpolate(thermo['cape_profile'], intrp['zINTRP'], 100.0)
+        intrp['cin_profileINTRP'] = interpolate(thermo['cin_profile'], intrp['zINTRP'], 100.0)
+        intrp['3cape_profileINTRP'] = interpolate(thermo['3cape_profile'], intrp['zINTRP'], 100.0)
+
+        general['wet_bulb'] = mpcalc.wet_bulb_temperature(p, T, Td)
+        general['elevation'] = 0
+
+        hgt_lvls = {}
+        hgt_var_list = ['h0', 'h05', 'h1', 'h15', 'h2', 'h25', 
+                        'h3', 'h35', 'h4', 'h45', 'h5', 'h55', 
+                        'h6', 'h65', 'h7', 'h75', 'h8', 'h85', 
+                        'h9', 'h10', 'h11', 'h12', 'h13', 'h14']
+        hgt_val_list = [0.,500.,1000.,1500.,2000.,2500.,3000.,3500.,
+                        4000.,4500.,5000.,5500.,6000.,6500.,7000.,
+                        7500.,8000.,8500.,9000.,10000.,11000.,
+                        12000.,13000.,14000.]
+
+        #print(intrp['zINTRP'])
+
+        for var, val, in zip(hgt_var_list, hgt_val_list):
+            try:
+                for i in range(0, len(intrp['zINTRP'])):
+                    if (intrp['zINTRP'][i] >= val):
+                        hgt_lvls[var] = i
+                        break
+            except:
+                pass
+        intrp['hgt_lvls'] = hgt_lvls
+
+        return general, thermo, kinem, intrp
+
 
         # declare easy variable names for reuse from `clean_data`
         # first, check for correct units: 

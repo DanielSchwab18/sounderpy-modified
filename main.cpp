@@ -29,10 +29,10 @@ int main()
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::string file = "C:/Users/danie/Desktop/Purdue/Research/sounderpy-modified/sounderpy-modified/example";
+    std::string file = "case 3.txt";
     
-    Sounding s = Sounding(file, true, true, 100, true);
-    std::cout << s.get_sbcin() << std::endl;
+    Sounding s = Sounding(file, true, true, 100, false);
+    std::cout << s.get_mu_lfc() << std::endl;
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
@@ -40,15 +40,16 @@ int main()
 
     return 0;
 
-    /*
+
     //EveryLevelBuoyancy e = EveryLevelBuoyancy();
     //e.get_every_level_buoyancy();
     //return 0;
-    
-    std::string path = "C:/Users/danie/RESEARCH_INPUT/100m interpolated soundings/"; // Change to your target folder
 
-    std::ofstream outfile("../Sounding Variable Calculator/output/windows_test_1.csv");
-    std::ofstream errfile("../Sounding Variable Calculator/output/errors.txt");
+    auto start_2 = std::chrono::high_resolution_clock::now();
+    std::string path = "C:/Users/danie/Desktop/Purdue/Research/Chavas Fall 2026/100m data/"; // Change to your target folder
+
+    std::ofstream outfile("C:/Users/danie/Desktop/Purdue/Research/Chavas Fall 2026/output/windows_C++.csv");
+    std::ofstream errfile("C:/Users/danie/Desktop/Purdue/Research/Chavas Fall 2026/output/windows_C++_errors.csv");
 
     errfile << "ERRORS WILL GO HERE\n";
     
@@ -57,7 +58,7 @@ int main()
 
     outfile << "YEAR,MONTH,DAY,HOUR,EVENT,MAGNITUDE,LAT,LON,STATE,";
     outfile << "SB_CAPE,SB_CIN,SB_NCAPE,SB_ECAPE,SB_ECIN,SB_E_TILDE,SB_E_A,SB_epsilon,SB_LFC,SB_EL,";
-    outfile << "ML_CAPE,ML_CIN,ML_NCAPE,ML_ECAPE,ML_ECIN,ML_E_TILDE,ML_E_A,ML_epsilon,ML_LFC_P,ML_E_LFC_P,";
+    outfile << "ML_CAPE,ML_CIN,ML_NCAPE,ML_ECAPE,ML_ECIN,ML_E_TILDE,ML_E_A,ML_epsilon,";
     outfile << "MU_CAPE,MU_CIN,MU_NCAPE,MU_ECAPE,MU_ECIN,MU_E_TILDE,MU_E_A,MU_epsilon,";
     outfile << "SB_3CAPE,SB_3ECAPE,ML_3CAPE,ML_3ECAPE,MU_3CAPE,MU_3ECAPE,";
     outfile << "RH_0_500,RH_0_1000,RH_0_3000,RH_1000_3000,";
@@ -79,6 +80,7 @@ int main()
 
     try {
         for (const auto& entry : std::filesystem::directory_iterator(path)) {
+            outfile.flush();
             if(entry.path().filename().string() == ".DS_Store") {
                 continue;
             }
@@ -90,14 +92,14 @@ int main()
                 std::vector<std::string> result = Helper_Funcs::split(filename, '_');
                 
 
-                Sounding s = Sounding(cur_file, false, false, 100);
+                Sounding s = Sounding(cur_file, false, false, 100, false);
 
                 outfile << result[0].substr(2, 2) << "," << result[0].substr(4, 2) << "," << result[0].substr(6, 2) << "," << result[0].substr(8, 2) << ",";
                 outfile << result[1] << "," << result[2] << "," << result[3] << "," << result[4] << "," << result[5] << ",";
 
                 outfile << s.get_sbcape() << "," << s.get_sbcin() << "," << s.get_sbncape_peters() << "," << s.get_sbecape() << "," << s.get_sbecin() << "," << s.get_sb_e() << "," << s.get_sb_e_a_tilde() << "," << s.get_sb_fractional_entrainment() << "," << s.get_sb_lfc() << "," << s.get_sb_el() << ",";
                 
-                outfile << s.get_mlcape() << "," << s.get_mlcin() << "," << s.get_mlNCAPE() << "," << s.get_mlecape() << "," << s.get_mlecin() << "," << s.get_ml_e() << "," << s.get_ml_e_a_tilde() << "," << s.get_ml_fractional_entrainment() << "," << s.get_ml_lfc_p() << "," << s.get_ml_e_lfc_p() << ",";
+                outfile << s.get_mlcape() << "," << s.get_mlcin() << "," << s.get_mlNCAPE() << "," << s.get_mlecape() << "," << s.get_mlecin() << "," << s.get_ml_e() << "," << s.get_ml_e_a_tilde() << "," << s.get_ml_fractional_entrainment() << ",";
                 
                 outfile << s.get_mucape() << "," << s.get_mucin() << "," << s.get_muNCAPE() << "," << s.get_muecape() << "," << s.get_muecin() << "," << s.get_mu_e() << "," << s.get_mu_e_a_tilde() << "," << s.get_mu_fractional_entrainment() << ",";
                 
@@ -177,7 +179,11 @@ int main()
     
     outfile.close();
     errfile.close();
-    */
+
+    auto stop_2 = std::chrono::high_resolution_clock::now();
+    auto duration_2 = std::chrono::duration_cast<std::chrono::milliseconds>(stop_2 - start_2);
+    std::cout << "Execution time: " << duration_2.count() << " ms" << std::endl;
+
     return 0;
 }
 
